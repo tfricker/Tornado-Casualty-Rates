@@ -9,9 +9,54 @@ The United States experiences around 1000 tornadoes a year, resulting in nearly 
 
 The goal of this work is to create a baseline rate of tornado casualties given an estimate of the number of people or the number of housing units impacted by a tornado. 
 
+Load packages.
+```{r}
+library(ggplot2)
+library(dplyr)
+library(lubridate)
+library(sf)
+```
+
 Begin by reading in tornado-level estimates of socioeconomic and demographic variables.
 ```{r}
-
+unzip("SocialCorrelatesNew.zip")
+TornSC.sf <- st_read(dsn = "SocialCorrelatesNew", 
+                    layer = "SocialCorrelatesNew", 
+                    stringsAsFactors = FALSE) %>%
+  mutate(Date = as.Date(date),
+         hr = hour(DateTim))
 ```
+
+Estimate the exposure and casualty rate by year
+```{r}
+df <- data.frame(TornSC.sf) %>%
+  group_by(Year) %>%
+  summarize(nT = n(), 
+         nCas = sum(cas),
+         Exposure = sum(TotalPp))
+
+ggplot(df, aes(x = Year, y = nCas)) +
+  geom_point() + geom_smooth(method = "lm")
+
+ggplot(df, aes(x = Year, y = nCas/nT)) +
+  geom_point() + geom_smooth(method = "lm")
+
+ggplot(df, aes(x = Year, y = nCas/Exposure)) +
+  geom_point() + geom_smooth(method = "lm")
+
+ggplot(df, aes(x = Year, y = Exposure)) +
+  geom_point() + geom_smooth(method = "lm")
+
+ggplot(df, aes(x = Year, y = Exposure/nT)) +
+  geom_point() + geom_smooth(method = "lm")
+```
+
+```{r}
+formula1 <- (nCas/Exposure) ~ Year
+fit <- lm(formula1, data = df)
+summary(fit)
+```
+
+
 
 
