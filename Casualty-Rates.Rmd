@@ -9,3 +9,9 @@ The United States experiences around 1000 tornadoes a year, resulting in nearly 
 
 The goal of this work is to create a baseline rate of tornado casualties given an estimate of the number of people or the number of housing units impacted by a tornado. 
 
+Begin by reading in tornado-level estimates of socioeconomic and demographic variables.
+```{r}
+
+```
+
+
