@@ -36,27 +36,80 @@ df <- data.frame(TornSC.sf) %>%
          Exposure = sum(TotalPp))
 
 ggplot(df, aes(x = Year, y = nCas)) +
-  geom_point() + geom_smooth(method = "lm")
+  geom_point() + geom_smooth(method = lm, color = "black", size = .35) +
+  ylab("Casualties [Number of People]") +
+  theme_minimal()
 
 ggplot(df, aes(x = Year, y = nCas/nT)) +
-  geom_point() + geom_smooth(method = "lm")
+  geom_point() + geom_smooth(method = lm, color = "black", size = .35) +
+  ylab("Casualty Rate [Number of People per Tornado]") +
+  theme_minimal()
 
 ggplot(df, aes(x = Year, y = nCas/Exposure)) +
-  geom_point() + geom_smooth(method = "lm")
+  geom_point() + geom_smooth(method = lm, color = "black", size = .35) +
+  ylab("Casualty Rate [Number of People per Person]") +
+  theme_minimal()
 
 ggplot(df, aes(x = Year, y = Exposure)) +
-  geom_point() + geom_smooth(method = "lm")
+  geom_point() + geom_smooth(method = lm, color = "black", size = .35) +
+  ylab("Exposure [Number of People]") +
+  theme_minimal()
 
 ggplot(df, aes(x = Year, y = Exposure/nT)) +
-  geom_point() + geom_smooth(method = "lm")
+  geom_point() + geom_smooth(method = lm, color = "black", size = .35) +
+  ylab("Exposure Rate [Number of People per Tornado]") +
+  theme_minimal()
 ```
 
+There is not a statistically significant difference in the casualty rate per person over the last 22 years, however, the rate is decreasing over time.
 ```{r}
 formula1 <- (nCas/Exposure) ~ Year
 fit <- lm(formula1, data = df)
 summary(fit)
 ```
 
+Calculate the 22-year casualty rate (casualties per person) of tornadoes
+```{r}
+CasRate = sum(TornSC.sf$cas)/sum(TornSC.sf$TotalPp); print(CasRate)
+FatRate = sum(TornSC.sf$fat)/sum(TornSC.sf$TotalPp); print(FatRate)
+InjRate = sum(TornSC.sf$inj)/sum(TornSC.sf$TotalPp); print(InjRate)
+```
 
+Calculate the 22-year casualty rate (casualties per housing unit) of tornadoes
+```{r}
+CasRateH = sum(TornSC.sf$cas)/sum(TornSC.sf$TtlHsnU); print(CasRateH)
+FatRateH = sum(TornSC.sf$fat)/sum(TornSC.sf$TtlHsnU); print(FatRateH)
+InjRateH = sum(TornSC.sf$inj)/sum(TornSC.sf$TtlHsnU); print(InjRateH)
+```
+
+Examples:
+If a town of 100,000 people was impacted by a tornado and every person was affected, how many casualties would we expect?
+```{r}
+TownPop <- 100000
+TownCas <- CasRate * TownPop; print(TownCas)
+```
+
+If 5,000 homes were impacted by a tornado, how many casualties would we expect?
+```{r}
+TownHomes <- 5000
+TownCas <- CasRateH * TownHomes; print(TownCas)
+```
+
+State-level casualty rates
+```{r}
+df <- data.frame(TornSC.sf) %>%
+  group_by(st) %>%
+  summarize(nT = n(),
+            CasRate = sum(cas)/sum(TotalPp),
+            FatRate = sum(fat)/sum(TotalPp),
+            InjRate = sum(inj)/sum(TotalPp))
+```
+
+Filter by tornado-prone states (>10)
+```{r}
+df <- df %>%
+  filter(nT > 10) %>%
+  arrange(desc(CasRate))
+```
 
 
