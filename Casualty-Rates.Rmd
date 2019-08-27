@@ -3,6 +3,8 @@ title: "Rethinking Tornado Casualy Rates"
 author: "Tyler Fricker"
 date: "8/5/2019"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 The United States experiences around 1000 tornadoes a year, resulting in nearly 1200 casualties (injuries and fatalities). While previous research has focused on analyzing and mapping the patterns of human vulnerability related to tornado casualties, little has been done to estimate the rate of tornado casualties at either the individual---per person---or household---number of houses---level.
@@ -110,6 +112,63 @@ Filter by tornado-prone states (>10)
 df <- df %>%
   filter(nT > 10) %>%
   arrange(desc(CasRate))
+```
+
+Look at these rates spatially
+```{r}
+library(USAboundaries)
+counties <- us_counties() %>%
+  st_transform(crs = 2163) %>%
+  rename(GEOID = geoid)
+
+counties <- counties %>%
+  filter(!state_abbr %in% c("AK", "PR", "HI"))
+```
+
+Find the tornadoes that intersect each county and create a county casualty rate.
+```{r}
+TornSC.sf <- st_transform(TornSC.sf, crs = 2163)
+
+x = st_intersection(TornSC.sf, counties)
+
+x <- data.frame(x[x$TotalPp > x$cas,]) %>%
+  group_by(GEOID, name, state_abbr) %>%
+  summarize(nT = n(),
+            cas = sum(cas),
+            fat = sum(fat),
+            inj = sum(inj),
+            TotalPop = sum(TotalPp),
+            CasRate = sum(cas)/sum(TotalPp),
+            FatRate = sum(fat)/sum(TotalPp),
+            InjRate = sum(inj)/sum(TotalPp)) #%>%
+  #filter(nT > 1)
+
+CountyCasRates <- merge(counties, x, by = c("GEOID", "name", "state_abbr"))
+```
+
+Map county-level casualty rates
+```{r}
+library(tmap)
+sts <- state.name[!state.name %in% c("Alaska", "Hawaii")]
+stateBorders <- us_states(states = sts)
+
+tm_shape(stateBorders, projection ="+init=epsg:2163") +
+  tm_borders() +
+  tm_fill(col = "grey94") +
+  tm_shape(counties) +
+  tm_borders() + 
+  tm_shape(CountyCasRates) + 
+  tm_fill("CasRate", title = "Casualty Rate\n[Casualty per Person]") +
+  tm_borders() +
+  tm_format('World', legend.position = c("left", "bottom"),
+            attr.position = c("left", "bottom"),
+            legend.frame = FALSE) +
+  #tm_format_Europe(legend.position = c("left", "bottom"),
+  #                 attr.position = c("left", "bottom"),
+  #                 legend.frame = TRUE) +
+  #tm_scale_bar(position = c("right", "bottom")) +
+  #tm_compass(position = c("right", "bottom")) +
+  tm_layout(frame = FALSE, attr.outside=TRUE)
 ```
 
 
