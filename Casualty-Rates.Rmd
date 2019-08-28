@@ -158,7 +158,7 @@ tm_shape(stateBorders, projection ="+init=epsg:2163") +
   tm_shape(counties) +
   tm_borders() + 
   tm_shape(CountyCasRates) + 
-  tm_fill("CasRate", title = "Casualty Rate\n[Casualty per Person]") +
+  tm_fill("CasRate", palette = "Oranges", title = "Casualty Rate\n[per capita]") +
   tm_borders() +
   tm_format('World', legend.position = c("left", "bottom"),
             attr.position = c("left", "bottom"),
