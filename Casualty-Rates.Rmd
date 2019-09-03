@@ -102,7 +102,6 @@ TownHomes <- 5000
 TownCas <- CasRateH * TownHomes; print(TownCas)
 ```
 
-<<<<<<< HEAD
 Casualty rates by EF category
 ```{r}
 df <- data.frame(TornSC.sf) %>%
@@ -150,7 +149,6 @@ ggplot(df, aes(x = Ma, y = CasRate)) +
   ylab("Casualty Rate [Number of People per Tornado]") +
   theme_minimal()
 ```
->>>>>>> 31821afd21fac0e1fa6e6d0b4df03ca5b0d0165f
 
 State-level casualty rates
 ```{r}
@@ -224,7 +222,6 @@ df <- data.frame(CountyCasRates) %>%
             FatRate = sum(fat)/sum(TotalPop),
             InjRate = sum(inj)/sum(TotalPop))
 ```
-
 
 Map county-level casualty rates
 ```{r}
