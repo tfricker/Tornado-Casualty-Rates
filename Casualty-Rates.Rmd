@@ -102,6 +102,7 @@ TownHomes <- 5000
 TownCas <- CasRateH * TownHomes; print(TownCas)
 ```
 
+<<<<<<< HEAD
 Casualty rates by EF category
 ```{r}
 df <- data.frame(TornSC.sf) %>%
@@ -116,6 +117,40 @@ df <- data.frame(TornSC.sf) %>%
             InjRatio = sum(inj)/sum(fat))
 ```
 
+=======
+## Subsets of casualty rates
+
+Yearly casualty rates
+```{r}
+df <- data.frame(TornSC.sf) %>%
+  group_by(Year) %>%
+  summarize(nT = n(),
+            CasRate = sum(cas)/sum(TotalPp),
+            FatRate = sum(fat)/sum(TotalPp),
+            InjRate = sum(inj)/sum(TotalPp))
+
+ggplot(df, aes(x = Year, y = CasRate)) +
+  geom_point() + geom_smooth(method = lm, color = "black", size = .35) +
+  ylab("Casualty Rate [Number of People per Tornado]") +
+  theme_minimal()
+```
+
+Monthly casualty rates
+```{r}
+df <- data.frame(TornSC.sf) %>%
+  group_by(mo) %>%
+  summarize(nT = n(),
+            CasRate = sum(cas)/sum(TotalPp),
+            FatRate = sum(fat)/sum(TotalPp),
+            InjRate = sum(inj)/sum(TotalPp)) %>%
+  mutate(Ma = factor(month.abb[mo], levels = month.abb[1:12]))
+
+ggplot(df, aes(x = Ma, y = CasRate)) +
+  geom_point() + geom_smooth(aes(x = mo, y = CasRate), color = "black", size = .35) +
+  ylab("Casualty Rate [Number of People per Tornado]") +
+  theme_minimal()
+```
+>>>>>>> 31821afd21fac0e1fa6e6d0b4df03ca5b0d0165f
 
 State-level casualty rates
 ```{r}
@@ -125,6 +160,14 @@ df <- data.frame(TornSC.sf) %>%
             CasRate = sum(cas)/sum(TotalPp),
             FatRate = sum(fat)/sum(TotalPp),
             InjRate = sum(inj)/sum(TotalPp))
+
+df$CasRate[df$CasRate > 1] = 1
+
+ggplot(df, aes(st)) +
+  geom_col(aes(y = CasRate)) +
+  xlab("State") +
+  ylab("Casualty Rate [Number of People per Tornado]") +
+  theme_minimal()
 ```
 
 Filter by tornado-prone states (>10)
@@ -132,6 +175,12 @@ Filter by tornado-prone states (>10)
 df <- df %>%
   filter(nT > 10) %>%
   arrange(desc(CasRate))
+
+ggplot(df, aes(st)) +
+  geom_col(aes(y = CasRate)) +
+  xlab("State") +
+  ylab("Casualty Rate [Number of People per Tornado]") +
+  theme_minimal()
 ```
 
 Look at these rates spatially
@@ -166,6 +215,17 @@ x <- data.frame(x[x$TotalPp > x$cas,]) %>%
 CountyCasRates <- merge(counties, x, by = c("GEOID", "name", "state_abbr"))
 ```
 
+County casualty rates
+```{r}
+df <- data.frame(CountyCasRates) %>%
+  group_by(name, state_abbr) %>%
+  summarize(nT = n(),
+            CasRate = sum(cas)/sum(TotalPop),
+            FatRate = sum(fat)/sum(TotalPop),
+            InjRate = sum(inj)/sum(TotalPop))
+```
+
+
 Map county-level casualty rates
 ```{r}
 library(tmap)
@@ -173,13 +233,13 @@ sts <- state.name[!state.name %in% c("Alaska", "Hawaii")]
 stateBorders <- us_states(states = sts)
 
 tm_shape(stateBorders, projection ="+init=epsg:2163") +
-  tm_borders() +
+  tm_borders(alpha = 0.2) +
   tm_fill(col = "grey94") +
   tm_shape(counties) +
-  tm_borders() + 
+  tm_borders(alpha = 0.2) + 
   tm_shape(CountyCasRates) + 
   tm_fill("CasRate", palette = "Oranges", title = "Casualty Rate\n[per capita]") +
-  tm_borders() +
+  tm_borders(alpha = 0.2) +
   tm_format('World', legend.position = c("left", "bottom"),
             attr.position = c("left", "bottom"),
             legend.frame = FALSE) +
