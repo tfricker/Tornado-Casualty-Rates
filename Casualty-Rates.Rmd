@@ -84,6 +84,11 @@ FatRateH = sum(TornSC.sf$fat)/sum(TornSC.sf$TtlHsnU); print(FatRateH)
 InjRateH = sum(TornSC.sf$inj)/sum(TornSC.sf$TtlHsnU); print(InjRateH)
 ```
 
+Calculate the ratio of injuries to fatalities
+```{r}
+sum(TornSC.sf$inj)/sum(TornSC.sf$fat)
+```
+
 Examples:
 If a town of 100,000 people was impacted by a tornado and every person was affected, how many casualties would we expect?
 ```{r}
@@ -96,6 +101,21 @@ If 5,000 homes were impacted by a tornado, how many casualties would we expect?
 TownHomes <- 5000
 TownCas <- CasRateH * TownHomes; print(TownCas)
 ```
+
+Casualty rates by EF category
+```{r}
+df <- data.frame(TornSC.sf) %>%
+  group_by(mag) %>%
+  summarize(nT = n(),
+            AvgArea = (sum(AreaPth)/n())/10^6,
+            nCas = sum(cas),
+            TotalPop = sum(TotalPp),
+            CasRate = sum(cas)/sum(TotalPp),
+            FatRate = sum(fat)/sum(TotalPp),
+            InjRate = sum(inj)/sum(TotalPp),
+            InjRatio = sum(inj)/sum(fat))
+```
+
 
 State-level casualty rates
 ```{r}
