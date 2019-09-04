@@ -294,7 +294,8 @@ x <- data.frame(x[x$TotalPp > x$cas,]) %>%
             TotalPop = sum(TotalPp),
             CasRate = sum(cas)/sum(TotalPp),
             FatRate = sum(fat)/sum(TotalPp),
-            InjRate = sum(inj)/sum(TotalPp)) #%>%
+            InjRate = sum(inj)/sum(TotalPp),
+            TtlHsnU = sum(TtlHsnU)) #%>%
   #filter(nT > 1)
 
 CountyCasRates <- merge(counties, x, by = c("GEOID", "name", "state_abbr"))
@@ -304,19 +305,32 @@ County casualty rates
 ```{r}
 df <- data.frame(CountyCasRates) %>%
   group_by(name, state_abbr) %>%
-  summarize(nT = n(),
+  summarize(nT = sum(nT),
             CasRate = sum(cas)/sum(TotalPop),
             FatRate = sum(fat)/sum(TotalPop),
-            InjRate = sum(inj)/sum(TotalPop))
+            InjRate = sum(inj)/sum(TotalPop),
+            CasRateH = sum(cas)/sum(TtlHsnU),
+            FatRateH = sum(fat)/sum(TtlHsnU),
+            InjRateH = sum(inj)/sum(TtlHsnU))
 ```
 
-Map county-level casualty rates
+Filter by active counties
+```{r}
+df2 <- df %>%
+  filter(nT > 1)
+
+df2$CasRateH[df2$CasRateH > 1] = 1
+df2$FatRateH[df2$FatRateH > 1] = 1
+df2$InjRateH[df2$InjRateH > 1] = 1
+```
+
+Map per-capita county-level casualty rates
 ```{r}
 library(tmap)
 sts <- state.name[!state.name %in% c("Alaska", "Hawaii")]
 stateBorders <- us_states(states = sts)
 
-tm_shape(stateBorders, projection ="+init=epsg:2163") +
+A = tm_shape(stateBorders, projection ="+init=epsg:2163") +
   tm_borders(alpha = 0.2) +
   tm_fill(col = "grey94") +
   tm_shape(counties) +
@@ -324,6 +338,7 @@ tm_shape(stateBorders, projection ="+init=epsg:2163") +
   tm_shape(CountyCasRates) + 
   tm_fill("CasRate", palette = "Oranges", title = "Casualty Rate\n[per capita]") +
   tm_borders(alpha = 0.2) +
+  tm_style('white', title="A") +
   tm_format('World', legend.position = c("left", "bottom"),
             attr.position = c("left", "bottom"),
             legend.frame = FALSE) +
@@ -333,6 +348,28 @@ tm_shape(stateBorders, projection ="+init=epsg:2163") +
   #tm_scale_bar(position = c("right", "bottom")) +
   #tm_compass(position = c("right", "bottom")) +
   tm_layout(frame = FALSE, attr.outside=TRUE)
+
+B = tm_shape(stateBorders, projection ="+init=epsg:2163") +
+  tm_borders(alpha = 0.2) +
+  tm_fill(col = "grey94") +
+  tm_shape(counties) +
+  tm_borders(alpha = 0.2) + 
+  tm_shape(CountyCasRates[CountyCasRates$nT > 1,]) + 
+  tm_fill("CasRate", palette = "Oranges", title = "Casualty Rate\n[per capita]") +
+  tm_borders(alpha = 0.2) +
+  tm_style('white', title="B") +
+  tm_format('World', legend.position = c("left", "bottom"),
+            attr.position = c("left", "bottom"),
+            legend.frame = FALSE) +
+  #tm_format_Europe(legend.position = c("left", "bottom"),
+  #                 attr.position = c("left", "bottom"),
+  #                 legend.frame = TRUE) +
+  #tm_scale_bar(position = c("right", "bottom")) +
+  #tm_compass(position = c("right", "bottom")) +
+  tm_layout(frame = FALSE, attr.outside=TRUE)
+
+
+tmap_arrange(A, B, ncol = 1)
 ```
 
-
+Export at 8 x 11 landscape
