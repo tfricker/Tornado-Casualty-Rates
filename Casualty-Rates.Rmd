@@ -113,7 +113,11 @@ df <- data.frame(TornSC.sf) %>%
             CasRate = sum(cas)/sum(TotalPp),
             FatRate = sum(fat)/sum(TotalPp),
             InjRate = sum(inj)/sum(TotalPp),
-            InjRatio = sum(inj)/sum(fat))
+            InjRatio = sum(inj)/sum(fat),
+            nHU = sum(TtlHsnU),
+            CasRateH = sum(cas)/sum(TtlHsnU),
+            FatRateH = sum(fat)/sum(TtlHsnU),
+            InjRateH = sum(inj)/sum(TtlHsnU))
 ```
 
 =======
@@ -157,33 +161,82 @@ df <- data.frame(TornSC.sf) %>%
   summarize(nT = n(),
             CasRate = sum(cas)/sum(TotalPp),
             FatRate = sum(fat)/sum(TotalPp),
-            InjRate = sum(inj)/sum(TotalPp))
+            InjRate = sum(inj)/sum(TotalPp),
+            nHU = sum(TtlHsnU),
+            CasRateH = sum(cas)/sum(TtlHsnU),
+            FatRateH = sum(fat)/sum(TtlHsnU),
+            InjRateH = sum(inj)/sum(TtlHsnU))
 
 df$CasRate[df$CasRate > 1] = 1
+df$FatRate[df$FatRate > 1] = 1
+df$InjRate[df$InjRate > 1] = 1
 
-ggplot(df, aes(st)) +
+df$CasRateH[df$CasRateH > 1] = 1
+df$FatRateH[df$FatRateH > 1] = 1
+df$InjRateH[df$InjRateH > 1] = 1
+
+A = ggplot(df, aes(st)) +
   geom_col(aes(y = CasRate)) +
   xlab("State") +
-  ylab("Casualty Rate [Number of People per Tornado]") +
+  ylab("Per-Capita Casualty Rate") +
   theme_minimal()
 ```
 
 Filter by tornado-prone states (>10)
 ```{r}
-df <- df %>%
+df2 <- df %>%
   filter(nT > 10) %>%
   arrange(desc(CasRate))
 
-ggplot(df, aes(st)) +
+B = ggplot(df2, aes(st)) +
   geom_col(aes(y = CasRate)) +
   xlab("State") +
-  ylab("Casualty Rate [Number of People per Tornado]") +
+  ylab("Per-Capita Casualty Rate") +
   theme_minimal()
+```
+
+Plot together
+```{r}
+source("http://peterhaschke.com/Code/multiplot.R")
+mat = matrix(c(1, 2), nrow = 2, byrow = TRUE)
+A = A + ggtitle("A") + 
+  theme(plot.title=element_text(hjust=0))
+B = B + ggtitle("B") + 
+  theme(plot.title=element_text(hjust=0))
+multiplot(A, B, layout = mat)
+```
+
+```{r}
+A = ggplot(df, aes(st)) +
+  geom_col(aes(y = CasRateH)) +
+  xlab("State") +
+  ylab("Per-Housing Unit Casualty Rate") +
+  theme_minimal()
+
+B = ggplot(df2, aes(st)) +
+  geom_col(aes(y = CasRateH)) +
+  xlab("State") +
+  ylab("Per-Housing Unit Casualty Rate") +
+  theme_minimal()
+
+mat = matrix(c(1, 2), nrow = 2, byrow = TRUE)
+A = A + ggtitle("A") + 
+  theme(plot.title=element_text(hjust=0))
+B = B + ggtitle("B") + 
+  theme(plot.title=element_text(hjust=0))
+multiplot(A, B, layout = mat)
 ```
 
 Look at these rates spatially
 ```{r}
 library(USAboundaries)
+states <- us_states()%>%
+  st_transform(crs = 2163) %>%
+  rename(st = state_abbr)
+
+states <- states %>%
+  filter(!st %in% c("AK", "PR", "HI"))
+
 counties <- us_counties() %>%
   st_transform(crs = 2163) %>%
   rename(GEOID = geoid)
@@ -191,6 +244,40 @@ counties <- us_counties() %>%
 counties <- counties %>%
   filter(!state_abbr %in% c("AK", "PR", "HI"))
 ```
+
+## State-level information
+
+Create a state casualty rate map
+```{r}
+TornSC.sf <- st_transform(TornSC.sf, crs = 2163)
+
+StateCasRates <- merge(states, df2, by = c("st"))
+```
+
+Map county-level casualty rates
+```{r}
+library(tmap)
+sts <- state.name[!state.name %in% c("Alaska", "Hawaii")]
+stateBorders <- us_states(states = sts)
+
+tm_shape(stateBorders, projection ="+init=epsg:2163") +
+  tm_borders(alpha = 0.2) +
+  tm_fill(col = "grey94") +
+  tm_shape(StateCasRates) + 
+  tm_fill("CasRate", palette = "Oranges", title = "Casualty Rate\n[per capita]") +
+  tm_borders(alpha = 0.2) +
+  tm_format('World', legend.position = c("left", "bottom"),
+            attr.position = c("left", "bottom"),
+            legend.frame = FALSE) +
+  #tm_format_Europe(legend.position = c("left", "bottom"),
+  #                 attr.position = c("left", "bottom"),
+  #                 legend.frame = TRUE) +
+  #tm_scale_bar(position = c("right", "bottom")) +
+  #tm_compass(position = c("right", "bottom")) +
+  tm_layout(frame = FALSE, attr.outside=TRUE)
+```
+
+### County-level information
 
 Find the tornadoes that intersect each county and create a county casualty rate.
 ```{r}
