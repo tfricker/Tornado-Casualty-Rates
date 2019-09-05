@@ -254,7 +254,7 @@ TornSC.sf <- st_transform(TornSC.sf, crs = 2163)
 StateCasRates <- merge(states, df2, by = c("st"))
 ```
 
-Map county-level casualty rates
+Map state-level casualty rates
 ```{r}
 library(tmap)
 sts <- state.name[!state.name %in% c("Alaska", "Hawaii")]
