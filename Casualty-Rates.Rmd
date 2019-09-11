@@ -84,6 +84,14 @@ FatRateH = sum(TornSC.sf$fat)/sum(TornSC.sf$TtlHsnU); print(FatRateH)
 InjRateH = sum(TornSC.sf$inj)/sum(TornSC.sf$TtlHsnU); print(InjRateH)
 ```
 
+Calculate the 22-year casualty rate (casualties per mobile home) of tornadoes
+```{r}
+CasRateM = sum(TornSC.sf$cas)/sum(TornSC.sf$MoblHms); print(CasRateM)
+FatRateM = sum(TornSC.sf$fat)/sum(TornSC.sf$MoblHms); print(FatRateM)
+InjRateM = sum(TornSC.sf$inj)/sum(TornSC.sf$MoblHms); print(InjRateM)
+```
+
+
 Calculate the ratio of injuries to fatalities
 ```{r}
 sum(TornSC.sf$inj)/sum(TornSC.sf$fat)
