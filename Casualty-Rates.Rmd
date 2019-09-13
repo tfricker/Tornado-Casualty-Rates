@@ -198,6 +198,7 @@ df2 <- df %>%
 
 B = ggplot(df2, aes(st)) +
   geom_col(aes(y = CasRate)) +
+  ylim(0, 1) + 
   xlab("State") +
   ylab("Per-Capita Casualty Rate") +
   theme_minimal()
@@ -223,6 +224,7 @@ A = ggplot(df, aes(st)) +
 
 B = ggplot(df2, aes(st)) +
   geom_col(aes(y = CasRateH)) +
+  ylim(0, 1) + 
   xlab("State") +
   ylab("Per-Housing Unit Casualty Rate") +
   theme_minimal()
