@@ -351,7 +351,7 @@ A = tm_shape(stateBorders, projection ="+init=epsg:2163") +
   tm_shape(counties) +
   tm_borders(alpha = 0.2) + 
   tm_shape(CountyCasRates) + 
-  tm_fill("CasRate", palette = "Oranges", title = "Casualty Rate\n[per capita]") +
+  tm_fill("CasRate", palette = "Oranges", title = "Casualty Rate\n[per-capita]") +
   tm_borders(alpha = 0.2) +
   tm_style('white', title="A") +
   tm_format('World', legend.position = c("left", "bottom"),
@@ -370,7 +370,7 @@ B = tm_shape(stateBorders, projection ="+init=epsg:2163") +
   tm_shape(counties) +
   tm_borders(alpha = 0.2) + 
   tm_shape(CountyCasRates[CountyCasRates$nT > 1,]) + 
-  tm_fill("CasRate", palette = "Oranges", title = "Casualty Rate\n[per capita]") +
+  tm_fill("CasRate", palette = "Oranges", title = "Casualty Rate\n[per-capita]") +
   tm_borders(alpha = 0.2) +
   tm_style('white', title="B") +
   tm_format('World', legend.position = c("left", "bottom"),
@@ -387,7 +387,7 @@ B = tm_shape(stateBorders, projection ="+init=epsg:2163") +
 tmap_arrange(A, B, ncol = 1)
 ```
 
-Export at 8 x 11 landscape
+Export at 8 x 11 landscape or 7.5 x 5.5 portrait
 
 Map per-housing unit casualty rate
 ```{r}
@@ -401,7 +401,7 @@ A = tm_shape(stateBorders, projection ="+init=epsg:2163") +
   tm_shape(counties) +
   tm_borders(alpha = 0.2) + 
   tm_shape(CountyCasRates) + 
-  tm_fill("CasRateH", palette = "Oranges", title = "Casualty Rate\n[per housing unit]") +
+  tm_fill("CasRateH", palette = "Oranges", title = "Casualty Rate\n[per-housing unit]") +
   tm_borders(alpha = 0.2) +
   tm_style('white', title="A") +
   tm_format('World', legend.position = c("left", "bottom"),
@@ -420,7 +420,7 @@ B = tm_shape(stateBorders, projection ="+init=epsg:2163") +
   tm_shape(counties) +
   tm_borders(alpha = 0.2) + 
   tm_shape(CountyCasRates[CountyCasRates$nT > 1,]) + 
-  tm_fill("CasRateH", palette = "Oranges", title = "Casualty Rate\n[per housing unit]") +
+  tm_fill("CasRateH", palette = "Oranges", title = "Casualty Rate\n[per-housing unit]") +
   tm_borders(alpha = 0.2) +
   tm_style('white', title="B") +
   tm_format('World', legend.position = c("left", "bottom"),
