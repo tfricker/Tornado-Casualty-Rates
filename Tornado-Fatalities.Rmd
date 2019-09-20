@@ -68,5 +68,13 @@ ggplot(df, aes(x = yr, y = Rfat)) +
   theme_minimal()
 ```
 
+```{r}
+df2 <- KillerTorn.sf %>%
+  group_by(st) %>%
+  summarize(MHfat = sum(MHfat),
+            MH = sum(MoblHms),
+            MHfatRate = sum(MHfat)/sum(MoblHms)) %>%
+  arrange(desc(MHfatRate))
+```
 
 
