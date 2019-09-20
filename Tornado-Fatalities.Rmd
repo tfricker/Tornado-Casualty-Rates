@@ -3,6 +3,8 @@ title: "Tornado-Fatalities.Rmd"
 author: "Tyler Fricker"
 date: "9/20/2019"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 Load packages.
@@ -22,3 +24,49 @@ TornSC.sf <- st_read(dsn = "SocialCorrelatesNew",
   mutate(Date = as.Date(date),
          hr = hour(DateTim))
 ```
+
+Look at killer tornadoes
+```{r}
+KillerTorn.sf <- TornSC.sf[TornSC.sf$fat > 0,]
+```
+
+Read in killer tornadoes csv and add mobile home fatalities and non-residential fatalities
+```{r}
+KillerTorn.df <- read.csv("KillerTornadoes.csv")
+
+KillerTorn.sf$MHfat = KillerTorn.df$mobile_fat
+KillerTorn.sf$Ofat = KillerTorn.df$other_fat
+```
+
+Look at mobile home fatalities in more detail
+```{r}
+sum(KillerTorn.sf$MHfat)/sum(KillerTorn.sf$fat)
+
+df <- KillerTorn.sf %>%
+  group_by(yr) %>%
+  summarize(nT = n(),
+         MHfat = sum(MHfat),
+         NRfat = sum(Ofat),
+         Rfat = (sum(fat)-(sum(MHfat)-sum(Ofat))))
+
+ggplot(df, aes(x = yr, y = MHfat)) +
+  geom_point() + geom_smooth(method = lm, color = "black", size = .35) +
+  xlab("Year") +
+  ylab("Mobile Home Fatalities") +
+  theme_minimal()
+
+ggplot(df, aes(x = yr, y = NRfat)) +
+  geom_point() + geom_smooth(method = lm, color = "black", size = .35) +
+  xlab("Year") +
+  ylab("Non-Residential Fatalities") +
+  theme_minimal()
+
+ggplot(df, aes(x = yr, y = Rfat)) +
+  geom_point() + geom_smooth(method = lm, color = "black", size = .35) +
+  xlab("Year") +
+  ylab("Residential Fatalities") +
+  theme_minimal()
+```
+
+
+
