@@ -30,7 +30,7 @@ Look at killer tornadoes
 KillerTorn.sf <- TornSC.sf[TornSC.sf$fat > 0,]
 ```
 
-Read in killer tornadoes csv and add mobile home fatalities and non-residential fatalities
+Read in killer tornadoes csv and add fatality types and mobile home population. To calculate mobile home population, find the average number of people living in mobile homes (total pop (20 million) / mobile homes (8529795)). This value is 2.34.
 ```{r}
 KillerTorn.df <- read.csv("KillerTornadoes.csv")
 
@@ -39,7 +39,7 @@ KillerTorn.sf$MHfat = KillerTorn.df$mobile_fat
 KillerTorn.sf$Ofat = KillerTorn.df$other_fat
 KillerTorn.sf$Ufat = KillerTorn.df$unknown_fat
 
-KillerTorn.sf$MHPop = KillerTorn.sf$TotalPp * 0.06112469
+KillerTorn.sf$MHPop = KillerTorn.sf$MoblHms * 2.34
 ```
 
 Look at mobile home fatalities in more detail
