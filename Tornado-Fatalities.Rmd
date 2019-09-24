@@ -34,8 +34,12 @@ Read in killer tornadoes csv and add mobile home fatalities and non-residential 
 ```{r}
 KillerTorn.df <- read.csv("KillerTornadoes.csv")
 
+KillerTorn.sf$Pfat = KillerTorn.df$permanent_fat
 KillerTorn.sf$MHfat = KillerTorn.df$mobile_fat
 KillerTorn.sf$Ofat = KillerTorn.df$other_fat
+KillerTorn.sf$Ufat = KillerTorn.df$unknown_fat
+
+KillerTorn.sf$MHPop = KillerTorn.sf$TotalPp * 0.06112469
 ```
 
 Look at mobile home fatalities in more detail
@@ -47,7 +51,8 @@ df <- KillerTorn.sf %>%
   summarize(nT = n(),
          MHfat = sum(MHfat),
          NRfat = sum(Ofat),
-         Rfat = (sum(fat)-(sum(MHfat)-sum(Ofat))))
+         Rfat = sum(Pfat),
+         Ufat = sum(Ufat))
 
 ggplot(df, aes(x = yr, y = MHfat)) +
   geom_point() + geom_smooth(method = lm, color = "black", size = .35) +
