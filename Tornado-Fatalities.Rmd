@@ -55,26 +55,64 @@ df <- KillerTorn.sf %>%
          Ufat = sum(Ufat))
 
 ggplot(df, aes(x = yr, y = MHfat)) +
-  geom_point() + geom_smooth(method = lm, color = "black", size = .35) +
+  geom_point() + geom_smooth(method = lm, color = "black", size = .35, se = FALSE) +
   xlab("Year") +
   ylab("Mobile Home Fatalities") +
-  coord_cartesian(ylim = c(0, 300)) +
-  theme_minimal()
-
-ggplot(df, aes(x = yr, y = NRfat)) +
-  geom_point() + geom_smooth(method = lm, color = "black", size = .35) +
-  xlab("Year") +
-  ylab("Non-Residential Fatalities") +
-  coord_cartesian(ylim = c(0, 300)) +
+#  coord_cartesian(ylim = c(0, 300)) +
   theme_minimal()
 
 ggplot(df, aes(x = yr, y = Rfat)) +
   geom_point() + geom_smooth(method = lm, color = "black", size = .35) +
   xlab("Year") +
   ylab("Residential Fatalities") +
-  coord_cartesian(ylim = c(0, 300)) +
+#  coord_cartesian(ylim = c(0, 300)) +
   theme_minimal()
 ```
+
+Try to plot on same plane
+```{r}
+library(reshape2)
+library(wesanderson)
+dfM = melt(data = df, id.vars = "yr", measure.vars = c("MHfat", "Rfat"))
+
+A = ggplot(dfM, aes(x = yr, y = value, colour = variable)) +
+  geom_point() + geom_smooth(method = lm, size = .35, se = FALSE) +
+  xlab("Year") +
+  ylab("Number of Fatalities") +
+  theme_minimal()
+
+pal = wes_palette("GrandBudapest1")
+pal2 = wes_palette("GrandBudapest2")
+
+A + scale_color_manual(values=c( "#7294D4", "#5B1A18"),
+                         name="Fatality Location",
+                         breaks=c("MHfat", "Rfat"),
+                         labels=c("Mobile Home", "Residential\n[Non-Mobile Home]"))
+```
+
+Try without 2011
+```{r}
+df2 = df %>%
+  filter(yr != 2011)
+
+df2M = melt(data = df2, id.vars = "yr", measure.vars = c("MHfat", "Rfat"))
+
+A = ggplot(df2M, aes(x = yr, y = value, colour = variable)) +
+  geom_point() + geom_smooth(method = lm, size = .35, se = FALSE) +
+  xlab("Year") +
+  ylab("Number of Fatalities") +
+  theme_minimal()
+
+pal = wes_palette("GrandBudapest1")
+pal2 = wes_palette("GrandBudapest2")
+
+A + scale_color_manual(values=c( "#7294D4", "#5B1A18"),
+                         name="Fatality Location",
+                         breaks=c("MHfat", "Rfat"),
+                         labels=c("Mobile Home", "Residential\n[Non-Mobile Home]"))
+```
+
+
 
 ```{r}
 df2 <- KillerTorn.sf %>%
