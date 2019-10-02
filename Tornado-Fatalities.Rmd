@@ -92,8 +92,11 @@ A + scale_color_manual(values=c( "#7294D4", "#5B1A18"),
 
 Try without 2011
 ```{r}
-df2 = df %>%
-  filter(yr != 2011)
+df2 = data.frame(df) %>%
+  filter(yr != 2011) %>%
+  select(yr, MHfat, Rfat)
+
+df2[nrow(df2) + 1,] = c(2011, 26, 19)
 
 df2M = melt(data = df2, id.vars = "yr", measure.vars = c("MHfat", "Rfat"))
 
