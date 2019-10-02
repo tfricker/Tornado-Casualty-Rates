@@ -58,18 +58,21 @@ ggplot(df, aes(x = yr, y = MHfat)) +
   geom_point() + geom_smooth(method = lm, color = "black", size = .35) +
   xlab("Year") +
   ylab("Mobile Home Fatalities") +
+  coord_cartesian(ylim = c(0, 300)) +
   theme_minimal()
 
 ggplot(df, aes(x = yr, y = NRfat)) +
   geom_point() + geom_smooth(method = lm, color = "black", size = .35) +
   xlab("Year") +
   ylab("Non-Residential Fatalities") +
+  coord_cartesian(ylim = c(0, 300)) +
   theme_minimal()
 
 ggplot(df, aes(x = yr, y = Rfat)) +
   geom_point() + geom_smooth(method = lm, color = "black", size = .35) +
   xlab("Year") +
   ylab("Residential Fatalities") +
+  coord_cartesian(ylim = c(0, 300)) +
   theme_minimal()
 ```
 
@@ -79,6 +82,7 @@ df2 <- KillerTorn.sf %>%
   summarize(MHfat = sum(MHfat),
             MH = sum(MoblHms),
             MHfatRate = sum(MHfat)/sum(MoblHms)) %>%
+  filter(MHfat >= 10) %>%
   arrange(desc(MHfatRate))
 ```
 
