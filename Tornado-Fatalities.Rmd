@@ -17,12 +17,12 @@ library(sf)
 
 Begin by reading in tornado-level estimates of socioeconomic and demographic variables.
 ```{r}
-unzip("SocialCorrelatesNew.zip")
-TornSC.sf <- st_read(dsn = "SocialCorrelatesNew", 
-                    layer = "SocialCorrelatesNew", 
+#unzip("SocialCorrelates.zip")
+TornSC.sf <- st_read(dsn = "SocialCorrelates", 
+                    layer = "SocialCorrelates", 
                     stringsAsFactors = FALSE) %>%
-  mutate(Date = as.Date(date),
-         hr = hour(DateTim))
+  mutate(date = as.Date(date),
+         DateTim = as.POSIXct(paste(yr, mo, dy, time), format = "%Y%m%d%H:%M:%S"))
 ```
 
 Look at killer tornadoes
@@ -51,20 +51,21 @@ df <- KillerTorn.sf %>%
   summarize(nT = n(),
          MHfat = sum(MHfat),
          NRfat = sum(Ofat),
-         Rfat = sum(Pfat),
-         Ufat = sum(Ufat))
+         Pfat = sum(Pfat),
+         Ufat = sum(Ufat),
+         Rfat = sum(MHfat) + sum(Pfat))
 
-ggplot(df, aes(x = yr, y = MHfat)) +
+ggplot(df, aes(x = yr, y = Rfat)) +
   geom_point() + geom_smooth(method = lm, color = "black", size = .35, se = FALSE) +
   xlab("Year") +
-  ylab("Mobile Home Fatalities") +
+  ylab("Residential Fatalities") +
 #  coord_cartesian(ylim = c(0, 300)) +
   theme_minimal()
 
-ggplot(df, aes(x = yr, y = Rfat)) +
+ggplot(df, aes(x = yr, y = NRfat)) +
   geom_point() + geom_smooth(method = lm, color = "black", size = .35) +
   xlab("Year") +
-  ylab("Residential Fatalities") +
+  ylab("Non-Residential Fatalities") +
 #  coord_cartesian(ylim = c(0, 300)) +
   theme_minimal()
 ```
@@ -73,7 +74,8 @@ Try to plot on same plane
 ```{r}
 library(reshape2)
 library(wesanderson)
-dfM = melt(data = df, id.vars = "yr", measure.vars = c("MHfat", "Rfat"))
+
+dfM = melt(data = df, id.vars = "yr", measure.vars = c("Rfat", "NRfat"))
 
 A = ggplot(dfM, aes(x = yr, y = value, colour = variable)) +
   geom_point() + geom_smooth(method = lm, size = .35, se = FALSE) +
@@ -86,7 +88,26 @@ pal2 = wes_palette("GrandBudapest2")
 
 A + scale_color_manual(values=c( "#7294D4", "#5B1A18"),
                          name="Fatality Location",
-                         breaks=c("MHfat", "Rfat"),
+                         breaks=c("Rfat", "NRfat"),
+                         labels=c("Residential", "Non-Residential"))
+```
+
+Next, compare the relationship between mobile homes and permanent homes.
+```{r}
+dfM = melt(data = df, id.vars = "yr", measure.vars = c("MHfat", "Pfat"))
+
+A = ggplot(dfM, aes(x = yr, y = value, colour = variable)) +
+  geom_point() + geom_smooth(method = lm, size = .35, se = FALSE) +
+  xlab("Year") +
+  ylab("Number of Fatalities") +
+  theme_minimal()
+
+pal = wes_palette("GrandBudapest1")
+pal2 = wes_palette("GrandBudapest2")
+
+A + scale_color_manual(values=c( "#7294D4", "#5B1A18"),
+                         name="Fatality Location",
+                         breaks=c("MHfat", "Pfat"),
                          labels=c("Mobile Home", "Residential\n[Non-Mobile Home]"))
 ```
 
@@ -94,11 +115,11 @@ Try without 2011
 ```{r}
 df2 = data.frame(df) %>%
   filter(yr != 2011) %>%
-  select(yr, MHfat, Rfat)
+  select(yr, MHfat, Pfat)
 
 df2[nrow(df2) + 1,] = c(2011, 26, 19)
 
-df2M = melt(data = df2, id.vars = "yr", measure.vars = c("MHfat", "Rfat"))
+df2M = melt(data = df2, id.vars = "yr", measure.vars = c("MHfat", "Pfat"))
 
 A = ggplot(df2M, aes(x = yr, y = value, colour = variable)) +
   geom_point() + geom_smooth(method = lm, size = .35, se = FALSE) +
@@ -111,11 +132,9 @@ pal2 = wes_palette("GrandBudapest2")
 
 A + scale_color_manual(values=c( "#7294D4", "#5B1A18"),
                          name="Fatality Location",
-                         breaks=c("MHfat", "Rfat"),
+                         breaks=c("MHfat", "Pfat"),
                          labels=c("Mobile Home", "Residential\n[Non-Mobile Home]"))
 ```
-
-
 
 ```{r}
 df2 <- KillerTorn.sf %>%
