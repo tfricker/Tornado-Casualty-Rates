@@ -13,6 +13,7 @@ library(ggplot2)
 library(dplyr)
 library(lubridate)
 library(sf)
+library(zoo)
 ```
 
 Begin by reading in tornado-level estimates of socioeconomic and demographic variables.
@@ -53,7 +54,8 @@ df <- KillerTorn.sf %>%
          NRfat = sum(Ofat),
          Pfat = sum(Pfat),
          Ufat = sum(Ufat),
-         Rfat = sum(MHfat) + sum(Pfat))
+         Rfat = sum(MHfat) + sum(Pfat)) %>%
+  mutate(Ratio = NRfat/Rfat)
 
 ggplot(df, aes(x = yr, y = Rfat)) +
   geom_point() + geom_smooth(method = lm, color = "black", size = .35, se = FALSE) +
@@ -66,6 +68,14 @@ ggplot(df, aes(x = yr, y = NRfat)) +
   geom_point() + geom_smooth(method = lm, color = "black", size = .35) +
   xlab("Year") +
   ylab("Non-Residential Fatalities") +
+#  coord_cartesian(ylim = c(0, 300)) +
+  theme_minimal()
+
+ggplot(df, aes(x = yr, y = Ratio)) +
+  geom_point(color = "red") + 
+  geom_smooth(method = lm, color = "red", size = .35, se = FALSE) +
+  xlab("Year") +
+  ylab("Non-Residential Fatalities:Residential Fatalities") +
 #  coord_cartesian(ylim = c(0, 300)) +
   theme_minimal()
 ```
@@ -94,9 +104,9 @@ A + scale_color_manual(values=c( "#7294D4", "#5B1A18"),
 
 Next, compare the relationship between mobile homes and permanent homes.
 ```{r}
-dfM = melt(data = df, id.vars = "yr", measure.vars = c("MHfat", "Pfat"))
+dfM <- melt(data = df, id.vars = "yr", measure.vars = c("MHfat", "Pfat"))
 
-A = ggplot(dfM, aes(x = yr, y = value, colour = variable)) +
+A <- ggplot(dfM, aes(x = yr, y = value, colour = variable)) +
   geom_point() + geom_smooth(method = lm, size = .35, se = FALSE) +
   xlab("Year") +
   ylab("Number of Fatalities") +
