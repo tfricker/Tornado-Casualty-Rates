@@ -43,11 +43,9 @@ KillerTorn.sf$Ufat = KillerTorn.df$unknown_fat
 KillerTorn.sf$MHPop = KillerTorn.sf$MoblHms * 2.34
 ```
 
-Look at mobile home fatalities in more detail
+Evaluate the relationship between residential and non-residential fatalities in more detail
 ```{r}
-sum(KillerTorn.sf$MHfat)/sum(KillerTorn.sf$fat)
-
-df <- KillerTorn.sf %>%
+df <- data.frame(KillerTorn.sf) %>%
   group_by(yr) %>%
   summarize(nT = n(),
          MHfat = sum(MHfat),
@@ -96,11 +94,97 @@ A = ggplot(dfM, aes(x = yr, y = value, colour = variable)) +
 pal = wes_palette("GrandBudapest1")
 pal2 = wes_palette("GrandBudapest2")
 
-A + scale_color_manual(values=c( "#7294D4", "#5B1A18"),
+A <- A + scale_color_manual(values=c( "#7294D4", "#5B1A18"),
                          name="Fatality Location",
                          breaks=c("Rfat", "NRfat"),
                          labels=c("Residential", "Non-Residential"))
+
+B <- ggplot(dfM, aes(x = yr, y = value, fill = variable)) +
+  geom_bar(stat = "identity") +
+  xlab("Year") +
+  ylab("Number of Fatalities") +
+  theme_minimal()
+  
+B <- B + scale_fill_manual(values=c( "#7294D4", "#5B1A18"),
+                         name="Fatality Location",
+                         labels=c("Residential", "Non-Residential"))
 ```
+
+Multiplot
+```{r}
+source("http://peterhaschke.com/Code/multiplot.R")
+
+A = A + ggtitle("A") + 
+  theme(plot.title=element_text(hjust=0))
+
+B = B + ggtitle("B") + 
+  theme(plot.title=element_text(hjust=0))
+
+multiplot(A, B, cols = 1)
+```
+
+Summarize fatality information
+```{r}
+summary(df)
+```
+
+Look at the seasonality of tornado fatality locations
+```{r}
+df2 <- data.frame(KillerTorn.sf) %>%
+  group_by(mo) %>%
+  summarize(nT = n(),
+         MHfat = sum(MHfat),
+         NRfat = sum(Ofat),
+         Pfat = sum(Pfat),
+         Ufat = sum(Ufat),
+         Rfat = sum(MHfat) + sum(Pfat)) %>%
+  mutate(Ratio = NRfat/Rfat,
+         MonthF = factor(month.abb[mo], levels = month.abb),
+         geometry = NULL)
+```
+
+Again, compare on the same plane.
+```{r}
+dfM2 = melt(data = df2, id.vars = "mo", measure.vars = c("Rfat", "NRfat"))
+
+C = ggplot(dfM2, aes(x = mo, y = value, colour = variable)) +
+  geom_point() + geom_smooth(method = "lm", size = .35, se = FALSE) +
+  scale_x_continuous(breaks = seq(1,12), labels = df2$MonthF, minor_breaks = NULL) +
+  xlab("Month") +
+  ylab("Number of Fatalities") +
+  theme_minimal()
+
+pal = wes_palette("GrandBudapest1")
+pal2 = wes_palette("GrandBudapest2")
+
+C <- C + scale_color_manual(values=c( "#7294D4", "#5B1A18"),
+                         name="Fatality Location",
+                         breaks=c("Rfat", "NRfat"),
+                         labels=c("Residential", "Non-Residential"))
+
+D <- ggplot(dfM2, aes(x = mo, y = value, fill = variable)) +
+  geom_bar(stat = "identity", position = "dodge") + 
+  scale_x_continuous(breaks = seq(1,12), labels = df2$MonthF, minor_breaks = NULL) +
+  xlab("Month") +
+  ylab("Number of Fatalities") +
+  theme_minimal()
+  
+D <- D + scale_fill_manual(values=c( "#7294D4", "#5B1A18"),
+                         name="Fatality Location",
+                         labels=c("Residential", "Non-Residential"))
+
+C = C + ggtitle("C") + 
+  theme(plot.title=element_text(hjust=0))
+
+D = D + ggtitle("D") + 
+  theme(plot.title=element_text(hjust=0))
+```
+
+Plot yearly and monthly relationships together
+```{r}
+multiplot(A, B, C, D, cols = 2)
+```
+
 
 Next, compare the relationship between mobile homes and permanent homes.
 ```{r}
