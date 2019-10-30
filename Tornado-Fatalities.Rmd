@@ -158,12 +158,11 @@ errors = aggregate(.~ mo + variable,
 
 
 C = ggplot(dfM2, aes(x = mo, y = value, colour = variable)) +
-  geom_point(data = dfM2[dfM2$variable == "Rfat",], position = position_dodge(0.5)) +
-  geom_point(data = dfM2[dfM2$variable == "NRfat",], position = position_dodge(0.5)) +
+  geom_point(position = position_dodge(0.5)) +
   #geom_smooth(method = "lm", size = .35, se = FALSE) +
   geom_errorbar(data = dfM2[dfM2$variable == "Rfat",], aes(ymin = ifelse(value-Rci < 0, 0, value-Rci), ymax = value + Rci), 
                 width = .25, 
-                position = position_dodge(0.5)) +
+                position = position_dodge(-1.5)) +
   geom_errorbar(data = dfM2[dfM2$variable == "NRfat",], aes(ymin = ifelse(value-NRci < 0, 0, value-NRci), ymax = value + NRci), 
                 width = .25, 
                 position = position_dodge(0.5)) +
