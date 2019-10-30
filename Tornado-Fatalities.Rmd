@@ -86,7 +86,7 @@ library(wesanderson)
 dfM = melt(data = df, id.vars = "yr", measure.vars = c("Rfat", "NRfat"))
 
 A = ggplot(dfM, aes(x = yr, y = value, colour = variable)) +
-  geom_point() + geom_smooth(method = lm, size = .35, se = FALSE) +
+  geom_point() + geom_smooth(method = lm, size = .35) +
   xlab("Year") +
   ylab("Number of Fatalities") +
   theme_minimal()
@@ -140,15 +140,31 @@ df2 <- data.frame(KillerTorn.sf) %>%
          Rfat = sum(MHfat) + sum(Pfat)) %>%
   mutate(Ratio = NRfat/Rfat,
          MonthF = factor(month.abb[mo], levels = month.abb),
-         geometry = NULL)
+         Rci = qt(0.9, df = nT - 1) * sd(Rfat)/sqrt(nT),
+         NRci = qt(0.9, df = nT - 1) * sd(NRfat)/sqrt(nT),
+         geometry = NULL) 
 ```
 
 Again, compare on the same plane.
 ```{r}
-dfM2 = melt(data = df2, id.vars = "mo", measure.vars = c("Rfat", "NRfat"))
+dfM2 <- melt(data = df2, id.vars = c("mo", "Rci", "NRci"), measure.vars = c("Rfat", "NRfat"))
+
+dfM2 = melt(data = df2, id.vars = c("mo", "nT"), measure.vars = c("Rfat", "NRfat")) %>%
+  mutate(ci = qt(0.975, df = nT -1) * sd(value)/sqrt(nT))
+
+errors = aggregate(.~ mo + variable, 
+                   data = dfM2, 
+                   FUN = sd)
+
 
 C = ggplot(dfM2, aes(x = mo, y = value, colour = variable)) +
-  geom_point() + geom_smooth(method = "lm", size = .35, se = FALSE) +
+  geom_point(position = position_dodge(0.5)) + #geom_smooth(method = "lm", size = .35, se = FALSE) +
+  geom_errorbar(data = dfM2[dfM2$variable == "Rfat",], aes(ymin = ifelse(value-Rci < 0, 0, value-Rci), ymax = value + Rci), 
+                width = .25, 
+                position = position_dodge(0.5)) +
+  geom_errorbar(data = dfM2[dfM2$variable == "NRfat",], aes(ymin = ifelse(value-NRci < 0, 0, value-NRci), ymax = value + NRci), 
+                width = .25, 
+                position = position_dodge(0.5)) +
   scale_x_continuous(breaks = seq(1,12), labels = df2$MonthF, minor_breaks = NULL) +
   xlab("Month") +
   ylab("Number of Fatalities") +
