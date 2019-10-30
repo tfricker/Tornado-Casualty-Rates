@@ -70,8 +70,8 @@ ggplot(df, aes(x = yr, y = NRfat)) +
   theme_minimal()
 
 ggplot(df, aes(x = yr, y = Ratio)) +
-  geom_point(color = "red") + 
-  geom_smooth(method = lm, color = "red", size = .35, se = FALSE) +
+  geom_bar(stat = "identity") + 
+  geom_smooth(method = lm, color = "red", size = .35, se = TRUE) +
   xlab("Year") +
   ylab("Non-Residential Fatalities:Residential Fatalities") +
 #  coord_cartesian(ylim = c(0, 300)) +
@@ -100,7 +100,7 @@ A <- A + scale_color_manual(values=c( "#7294D4", "#5B1A18"),
                          labels=c("Residential", "Non-Residential"))
 
 B <- ggplot(dfM, aes(x = yr, y = value, fill = variable)) +
-  geom_bar(stat = "identity") +
+  geom_bar(stat = "identity", position = "dodge") +
   xlab("Year") +
   ylab("Number of Fatalities") +
   theme_minimal()
@@ -144,6 +144,19 @@ df2 <- data.frame(KillerTorn.sf) %>%
          NRci = qt(0.9, df = nT - 1) * sd(NRfat)/sqrt(nT),
          geometry = NULL) 
 ```
+
+Look at the ration by month
+```{r}
+ggplot(df2, aes(x = mo, y = Ratio)) +
+  geom_bar(stat = "identity") + 
+  geom_smooth(method = loess, color = "red", size = .35, se = TRUE) +
+  scale_x_continuous(breaks = seq(1,12), labels = df2$MonthF, minor_breaks = NULL) +
+  xlab("Year") +
+  ylab("Non-Residential Fatalities:Residential Fatalities") +
+#  coord_cartesian(ylim = c(0, 300)) +
+  theme_minimal()
+```
+
 
 Again, compare on the same plane.
 ```{r}
