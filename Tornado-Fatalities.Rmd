@@ -7,6 +7,8 @@ editor_options:
   chunk_output_type: console
 ---
 
+The goal of this paper is to provide information on tornado fatalities in a current context. Tornado-level information on the number of tornado fatalities is available from the NWS in the form of SVRGIS data. Additional information on the location of each fatality, if known, can be found through Storm Data.
+
 Load packages.
 ```{r}
 library(ggplot2)
@@ -26,7 +28,7 @@ TornSC.sf <- st_read(dsn = "SocialCorrelates",
          DateTim = as.POSIXct(paste(yr, mo, dy, time), format = "%Y%m%d%H:%M:%S"))
 ```
 
-Look at killer tornadoes
+Subset by only those tornadoes that have caused at least one fatality.
 ```{r}
 KillerTorn.sf <- TornSC.sf[TornSC.sf$fat > 0,]
 ```
@@ -42,6 +44,91 @@ KillerTorn.sf$Ufat = KillerTorn.df$unknown_fat
 
 KillerTorn.sf$MHPop = KillerTorn.sf$MoblHms * 2.34
 ```
+
+## Preliminary Analysis
+
+Investigate fatalities in more detail. Begin with annual information.
+```{r}
+df <- data.frame(KillerTorn.sf) %>%
+  group_by(yr) %>%
+  summarize(nT = n(),
+            nF = sum(fat))
+
+summary(df$nT)
+```
+
+On average, over the past 24 years, over 20 (20.6) people have been killed in tornadoes per year. The median number of annual fatalities is 17.5 with an inter-quartile range between 13 and 25.
+
+Create plots showing the number of fatalities by year and the numbr of killer tornadoes by year.
+```{r}
+A <- ggplot(df, aes(x = yr, y = nF)) +
+  geom_line() +
+  geom_smooth() +
+  xlab("Year") +
+  ylab("Number of Fatalities") +
+  theme_minimal()
+
+B <- ggplot(df, aes(x = yr, y = nT)) +
+  geom_line() +
+  geom_smooth() +
+  xlab("Year") +
+  ylab("Number of Killer Tornadoes") +
+  theme_minimal()
+```
+
+Then move on to a plot on the number of fatalities per month.
+```{r}
+df2 <- data.frame(KillerTorn.sf) %>%
+  group_by(mo) %>%
+  summarize(nT = n(),
+            nF = sum(fat)) %>%
+  mutate(MonthF = factor(month.abb[mo], levels = month.abb))
+
+C <- ggplot(df2, aes(x = mo, y = nF)) +
+  geom_bar(stat = "identity") + 
+  scale_x_continuous(breaks = seq(1,12), labels = df2$MonthF, minor_breaks = NULL) +
+  xlab("") +
+  ylab("Number of Fatalities") +
+#  coord_cartesian(ylim = c(0, 300)) +
+  theme_minimal()
+```
+
+Finally find the cumulative distribution and plot it on a log-log scale.
+```{r}
+df3 <- data.frame(table(KillerTorn.sf$fat))
+
+D = ggplot(df3, aes(x = as.integer(Var1), y = Freq)) +
+  scale_x_log10() + scale_y_log10() +
+  geom_point() + 
+  xlab(expression(paste("Number of Fatalities"))) +
+  ylab("Number of Tornadoes") +
+  theme_minimal()
+```
+
+Multiplot
+```{r}
+source("http://peterhaschke.com/Code/multiplot.R")
+
+A = A + ggtitle("A") + 
+  theme(plot.title=element_text(hjust=0))
+
+B = B + ggtitle("B") + 
+  theme(plot.title=element_text(hjust=0))
+
+C = C + ggtitle("C") + 
+  theme(plot.title=element_text(hjust=0))
+
+D = D + ggtitle("D") + 
+  theme(plot.title=element_text(hjust=0))
+
+multiplot(A, C, B, D, cols = 2)
+```
+
+Over the past 24 years, the number of fatalties per has been rather constant with a slight decrease over the past 5+ years. The number of killer tornadoes has also been rather constant with a slight decreease over the past 5+ years.
+
+The number of tornado fatalities is greatest in the months of April and May and lowest during the summer (July and August).
+
+
 
 Evaluate the relationship between residential and non-residential fatalities in more detail
 ```{r}
@@ -110,19 +197,6 @@ B <- B + scale_fill_manual(values=c( "#7294D4", "#5B1A18"),
                          labels=c("Residential", "Non-Residential"))
 ```
 
-Multiplot
-```{r}
-source("http://peterhaschke.com/Code/multiplot.R")
-
-A = A + ggtitle("A") + 
-  theme(plot.title=element_text(hjust=0))
-
-B = B + ggtitle("B") + 
-  theme(plot.title=element_text(hjust=0))
-
-multiplot(A, B, cols = 1)
-```
-
 Summarize fatality information
 ```{r}
 summary(df)
@@ -145,7 +219,7 @@ df2 <- data.frame(KillerTorn.sf) %>%
          geometry = NULL) 
 ```
 
-Look at the ration by month
+Look at the ratio by month
 ```{r}
 ggplot(df2, aes(x = mo, y = Ratio)) +
   geom_bar(stat = "identity") + 
