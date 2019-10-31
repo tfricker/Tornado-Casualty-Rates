@@ -66,6 +66,7 @@ A <- ggplot(df, aes(x = yr, y = nF)) +
   geom_smooth() +
   xlab("Year") +
   ylab("Number of Fatalities") +
+  scale_y_continuous(breaks = c(-200, 0, 200, 400), labels = c("",0, 200, 400)) +
   theme_minimal()
 
 B <- ggplot(df, aes(x = yr, y = nT)) +
@@ -89,7 +90,6 @@ C <- ggplot(df2, aes(x = mo, y = nF)) +
   scale_x_continuous(breaks = seq(1,12), labels = df2$MonthF, minor_breaks = NULL) +
   xlab("") +
   ylab("Number of Fatalities") +
-#  coord_cartesian(ylim = c(0, 300)) +
   theme_minimal()
 ```
 
