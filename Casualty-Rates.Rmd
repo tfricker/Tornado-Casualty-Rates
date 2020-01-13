@@ -161,22 +161,6 @@ ggplot(df, aes(x = Ma, y = CasRate)) +
   theme_minimal()
 ```
 
-Diurnal casualty rates 
-```{r}
-df <- data.frame(TornSC.sf) %>%
-  group_by(Hour) %>%
-  summarize(nT = n(),
-            CasRate = sum(cas)/sum(TotalPp),
-            FatRate = sum(fat)/sum(TotalPp),
-            InjRate = sum(inj)/sum(TotalPp))
-
-df2 = df %>%
-  filter(Hour < 6 | Hour >= 18)
-
-df3 = df %>%
-  filter(Hour >= 6 & Hour < 18)
-```
-
 State-level casualty rates
 ```{r}
 df <- data.frame(TornSC.sf) %>%
@@ -278,7 +262,7 @@ Create a state casualty rate map
 ```{r}
 TornSC.sf <- st_transform(TornSC.sf, crs = 2163)
 
-StateCasRates <- merge(states, df2, by = c("st"))
+StateCasRates <- merge(states, df, by = c("st"))
 ```
 
 Map state-level casualty rates
@@ -287,12 +271,13 @@ library(tmap)
 sts <- state.name[!state.name %in% c("Alaska", "Hawaii")]
 stateBorders <- us_states(states = sts)
 
-tm_shape(stateBorders, projection ="+init=epsg:2163") +
-  tm_borders(alpha = 0.2) +
+A = tm_shape(stateBorders, projection ="+init=epsg:2163") +
+  tm_borders(alpha = 0.5) +
   tm_fill(col = "grey94") +
   tm_shape(StateCasRates) + 
-  tm_fill("CasRate", palette = "Oranges", title = "Casualty Rate\n[per capita]") +
-  tm_borders(alpha = 0.2) +
+  tm_fill("CasRate", palette = "Oranges", title = "Casualty Rate\n[per capita]", breaks = c(0, 0.15, 0.4, .75, 1)) +
+  tm_borders(alpha = 0.5) +
+  tm_style('white', title="A") +
   tm_format('World', legend.position = c("left", "bottom"),
             attr.position = c("left", "bottom"),
             legend.frame = FALSE) +
@@ -302,6 +287,32 @@ tm_shape(stateBorders, projection ="+init=epsg:2163") +
   #tm_scale_bar(position = c("right", "bottom")) +
   #tm_compass(position = c("right", "bottom")) +
   tm_layout(frame = FALSE, attr.outside=TRUE)
+```
+
+Filter by tornado-prone states (>10)
+```{r}
+StateCasRates2 <- StateCasRates %>%
+  filter(nT > 10) %>%
+  arrange(desc(CasRate))
+
+B = tm_shape(stateBorders, projection ="+init=epsg:2163") +
+  tm_borders(alpha = 0.5) +
+  tm_fill(col = "grey94") +
+  tm_shape(StateCasRates2) + 
+  tm_fill("CasRate", palette = "Oranges", title = "Casualty Rate\n[per capita]", breaks = c(0, 0.01, 0.02, .3, .4)) +
+  tm_borders(alpha = 0.5) +
+  tm_style('white', title="B") +
+  tm_format('World', legend.position = c("left", "bottom"),
+            attr.position = c("left", "bottom"),
+            legend.frame = FALSE) +
+  #tm_format_Europe(legend.position = c("left", "bottom"),
+  #                 attr.position = c("left", "bottom"),
+  #                 legend.frame = TRUE) +
+  #tm_scale_bar(position = c("right", "bottom")) +
+  #tm_compass(position = c("right", "bottom")) +
+  tm_layout(frame = FALSE, attr.outside=TRUE)
+
+tmap_arrange(A, B, ncol = 1)
 ```
 
 ### County-level information
@@ -454,4 +465,23 @@ B = tm_shape(stateBorders, projection ="+init=epsg:2163") +
 
 
 tmap_arrange(A, B, ncol = 1)
+```
+
+
+### Reviewer Comments and Concerns
+
+Diurnal casualty rates 
+```{r}
+df <- data.frame(TornSC.sf) %>%
+  group_by(Hour) %>%
+  summarize(nT = n(),
+            CasRate = sum(cas)/sum(TotalPp),
+            FatRate = sum(fat)/sum(TotalPp),
+            InjRate = sum(inj)/sum(TotalPp))
+
+df2 = df %>%
+  filter(Hour < 6 | Hour >= 18)
+
+df3 = df %>%
+  filter(Hour >= 6 & Hour < 18)
 ```
