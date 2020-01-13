@@ -25,8 +25,7 @@ unzip("SocialCorrelatesNew.zip")
 TornSC.sf <- st_read(dsn = "SocialCorrelatesNew", 
                     layer = "SocialCorrelatesNew", 
                     stringsAsFactors = FALSE) %>%
-  mutate(Date = as.Date(date),
-         hr = hour(DateTim))
+  mutate(Date = as.Date(date))
 ```
 
 Estimate the exposure and casualty rate by year
@@ -162,18 +161,36 @@ ggplot(df, aes(x = Ma, y = CasRate)) +
   theme_minimal()
 ```
 
+Diurnal casualty rates 
+```{r}
+df <- data.frame(TornSC.sf) %>%
+  group_by(Hour) %>%
+  summarize(nT = n(),
+            CasRate = sum(cas)/sum(TotalPp),
+            FatRate = sum(fat)/sum(TotalPp),
+            InjRate = sum(inj)/sum(TotalPp))
+
+df2 = df %>%
+  filter(Hour < 6 | Hour >= 18)
+
+df3 = df %>%
+  filter(Hour >= 6 & Hour < 18)
+```
+
 State-level casualty rates
 ```{r}
 df <- data.frame(TornSC.sf) %>%
   group_by(st) %>%
   summarize(nT = n(),
+            nPop = sum(TotalPp),
             CasRate = sum(cas)/sum(TotalPp),
             FatRate = sum(fat)/sum(TotalPp),
             InjRate = sum(inj)/sum(TotalPp),
             nHU = sum(TtlHsnU),
             CasRateH = sum(cas)/sum(TtlHsnU),
             FatRateH = sum(fat)/sum(TtlHsnU),
-            InjRateH = sum(inj)/sum(TtlHsnU))
+            InjRateH = sum(inj)/sum(TtlHsnU),
+            CrowdRate = nPop/nHU)
 
 df$CasRate[df$CasRate > 1] = 1
 df$FatRate[df$FatRate > 1] = 1
