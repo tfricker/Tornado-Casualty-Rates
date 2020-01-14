@@ -529,7 +529,6 @@ df2 <- data.frame(CountyCasRates) %>%
             PHUInjR = sum(inj)/sum(TtlHsnU))
 ```
 
-
 ### Case Study: the Dakotas
 ```{r}
 df <- data.frame(CountyCasRates) %>%
