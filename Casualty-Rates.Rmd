@@ -541,6 +541,8 @@ df <- data.frame(CountyCasRates) %>%
             avgHU = mean(TtlHsnU),
             avgCas = mean(cas)) %>%
   filter(nT > 10)
-
 ```
 
+It appears the Dakotas have such a high casualty count due to the low number of total people and low number of total housing units impacted by casualty-producing tornadoes. In fact, the average population impacted by casualty-producing tornadoes in ND is 56% less than any other state and the average population impacted by casualty-producing tornadoes in SD is 75% less than another other state, not including ND.
+
+Similarly, the average number of total housing units impacted by casualty-producing tornadoes in ND is 58% less than any other state and the average number of total housing units impacted by casualty-producing tornadoes in SD is 77% less than any other state, not including ND.
