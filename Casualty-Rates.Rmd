@@ -90,7 +90,6 @@ FatRateM = sum(TornSC.sf$fat)/sum(TornSC.sf$MoblHms); print(FatRateM)
 InjRateM = sum(TornSC.sf$inj)/sum(TornSC.sf$MoblHms); print(InjRateM)
 ```
 
-
 Calculate the ratio of injuries to fatalities
 ```{r}
 sum(TornSC.sf$inj)/sum(TornSC.sf$fat)
@@ -276,7 +275,7 @@ A = tm_shape(stateBorders, projection ="+init=epsg:2163") +
   tm_fill(col = "grey94") +
   tm_shape(StateCasRates) + 
   tm_fill("CasRate", palette = "Oranges", title = "Casualty Rate\n[per capita]", breaks = c(0, 0.15, 0.4, .75, 1)) +
-  tm_borders(alpha = 0.5) +
+  tm_borders() +
   tm_style('white', title="A") +
   tm_format('World', legend.position = c("left", "bottom"),
             attr.position = c("left", "bottom"),
@@ -300,7 +299,7 @@ B = tm_shape(stateBorders, projection ="+init=epsg:2163") +
   tm_fill(col = "grey94") +
   tm_shape(StateCasRates2) + 
   tm_fill("CasRate", palette = "Oranges", title = "Casualty Rate\n[per capita]", breaks = c(0, 0.01, 0.02, .3, .4)) +
-  tm_borders(alpha = 0.5) +
+  tm_borders() +
   tm_style('white', title="B") +
   tm_format('World', legend.position = c("left", "bottom"),
             attr.position = c("left", "bottom"),
@@ -485,3 +484,64 @@ df2 = df %>%
 df3 = df %>%
   filter(Hour >= 6 & Hour < 18)
 ```
+
+Rural vs. Urban Divide
+
+Write in Rural-Urban codes and edit Metro/Non-Metro Counties
+```{r}
+RU <- read.csv("Rural_Urban_codes.csv", header = TRUE)
+
+library(stringr)
+RU$FIPS = str_pad(RU$FIPS, 5, pad = "0")
+RU$Description <- str_sub(RU$Description, 1, 8)
+RU$Description <- str_replace(RU$Description, "Metro - ", "Metro")
+```
+
+```{r}
+RU <- RU[RU$FIPS %in% CountyCasRates$GEOID,]
+df <- RU %>%
+  select("FIPS", "RUCC_2013", "Description") %>%
+  rename(., "GEOID" = "FIPS")
+
+CountyCasRates <- merge(CountyCasRates, df, by = "GEOID")
+```
+
+Compare the casualty rates
+```{r}
+# Urban
+df <- data.frame(CountyCasRates) %>%
+  filter(Description == "Metro") %>%
+  summarize(PCCasR = sum(cas)/sum(TotalPop),
+            PCFatR = sum(fat)/sum(TotalPop),
+            PCInjR = sum(inj)/sum(TotalPop),
+            PHUCasR = sum(cas)/sum(TtlHsnU),
+            PHUFatR = sum(fat)/sum(TtlHsnU),
+            PHUInjR = sum(inj)/sum(TtlHsnU))
+
+# Rural
+df2 <- data.frame(CountyCasRates) %>%
+  filter(Description == "Nonmetro") %>%
+  summarize(PCCasR = sum(cas)/sum(TotalPop),
+            PCFatR = sum(fat)/sum(TotalPop),
+            PCInjR = sum(inj)/sum(TotalPop),
+            PHUCasR = sum(cas)/sum(TtlHsnU),
+            PHUFatR = sum(fat)/sum(TtlHsnU),
+            PHUInjR = sum(inj)/sum(TtlHsnU))
+```
+
+
+### Case Study: the Dakotas
+```{r}
+df <- data.frame(CountyCasRates) %>%
+  filter(state_abbr == "ND" | state_abbr == "SD")
+
+df <- data.frame(CountyCasRates) %>%
+  group_by(state_abbr) %>%
+  summarize(nT = n(),
+            avgPop = mean(TotalPop),
+            avgHU = mean(TtlHsnU),
+            avgCas = mean(cas)) %>%
+  filter(nT > 10)
+
+```
+
