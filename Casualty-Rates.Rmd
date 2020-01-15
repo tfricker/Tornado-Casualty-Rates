@@ -550,9 +550,15 @@ Similarly, the average number of total housing units impacted by casualty-produc
 ### Quality of Injury Data
 ```{r}
 df <- data.frame(TornSC.sf) %>%
-  group_by(Year)
+  group_by(Year) %>%
+  filter(inj > 0, fat > 0) %>%
+  summarize(cc = cor(inj, fat, method = "spearman"))
 
-for(i in 1:nrow(df)){
-  cor.test(df$inj[i], df$fat[i], method = "spearman")}
+ggplot(df, aes(Year, cc)) +
+  geom_point() +
+  geom_smooth(method = lm) +
+  scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, .2)) + 
+  ylab("Spearman Rank Correlation\n r[Tornado Deaths, Tornado Injuries]") +
+  xlab("Year")
 ```
 
