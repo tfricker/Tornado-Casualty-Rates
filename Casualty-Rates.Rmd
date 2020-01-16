@@ -467,7 +467,7 @@ tmap_arrange(A, B, ncol = 1)
 ```
 
 
-### Reviewer Comments and Concerns
+## Reviewer Comments and Concerns
 
 Diurnal casualty rates 
 ```{r}
@@ -485,7 +485,7 @@ df3 = df %>%
   filter(Hour >= 6 & Hour < 18)
 ```
 
-Rural vs. Urban Divide
+### Rural vs. Urban Divide
 
 Write in Rural-Urban codes and edit Metro/Non-Metro Counties
 ```{r}
@@ -527,6 +527,26 @@ df2 <- data.frame(CountyCasRates) %>%
             PHUCasR = sum(cas)/sum(TtlHsnU),
             PHUFatR = sum(fat)/sum(TtlHsnU),
             PHUInjR = sum(inj)/sum(TtlHsnU))
+```
+
+Compare the rate of rural counties
+```{r}
+df <- data.frame(RU) %>%
+  group_by(State) %>%
+  summarize(nC = n())
+
+df2 <- data.frame(RU) %>%
+  group_by(State) %>%
+  filter(Description == "Metro") %>%
+  summarize(nCU = n())
+  
+df3 <- data.frame(RU) %>%
+  group_by(State) %>%
+  filter(Description == "Nonmetro") %>%
+  summarize(nCR = n())
+
+Rural <- df[df$State %in% df3$State,]
+Rural$nCR = df3$nCR; Rural$Perc = Rural$nCR/Rural$nC
 ```
 
 ### Case Study: the Dakotas
