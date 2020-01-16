@@ -108,6 +108,20 @@ TownHomes <- 5000
 TownCas <- CasRateH * TownHomes; print(TownCas)
 ```
 
+Look at case studies
+```{r}
+df <- data.frame(TornSC.sf) %>%
+  mutate(CasRate = cas/TotalPp,
+         CasRateH = cas/TtlHsnU)
+
+df$CasRate[df$CasRate > 1] = 1
+df$CasRateH[df$CasRateH > 1] = 1
+```
+
+
+=======
+## Subsets of casualty rates
+
 Casualty rates by EF category
 ```{r}
 df <- data.frame(TornSC.sf) %>%
@@ -125,9 +139,6 @@ df <- data.frame(TornSC.sf) %>%
             FatRateH = sum(fat)/sum(TtlHsnU),
             InjRateH = sum(inj)/sum(TtlHsnU))
 ```
-
-=======
-## Subsets of casualty rates
 
 Yearly casualty rates
 ```{r}
