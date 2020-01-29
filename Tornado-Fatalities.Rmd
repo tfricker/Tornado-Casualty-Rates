@@ -173,7 +173,7 @@ library(wesanderson)
 dfM = melt(data = df, id.vars = "yr", measure.vars = c("Rfat", "NRfat"))
 
 A = ggplot(dfM, aes(x = yr, y = value, colour = variable)) +
-  geom_point() + geom_smooth(method = lm, size = .35) +
+  geom_point() + geom_smooth(method = lm, size = .35, se = FALSE) +
   xlab("Year") +
   ylab("Number of Fatalities") +
   theme_minimal()
@@ -195,6 +195,8 @@ B <- ggplot(dfM, aes(x = yr, y = value, fill = variable)) +
 B <- B + scale_fill_manual(values=c( "#7294D4", "#5B1A18"),
                          name="Fatality Location",
                          labels=c("Residential", "Non-Residential"))
+
+multiplot(A, B, cols = 2)
 ```
 
 Summarize fatality information
@@ -242,7 +244,6 @@ dfM2 = melt(data = df2, id.vars = c("mo", "nT"), measure.vars = c("Rfat", "NRfat
 errors = aggregate(.~ mo + variable, 
                    data = dfM2, 
                    FUN = sd)
-
 
 C = ggplot(dfM2, aes(x = mo, y = value, colour = variable)) +
   geom_point(position = position_dodge(0.5)) +
@@ -300,10 +301,10 @@ A <- ggplot(dfM, aes(x = yr, y = value, colour = variable)) +
   ylab("Number of Fatalities") +
   theme_minimal()
 
-pal = wes_palette("GrandBudapest1")
-pal2 = wes_palette("GrandBudapest2")
+pal = wes_palette("Moonrise1")
+pal2 = wes_palette("Moonrise2")
 
-A + scale_color_manual(values=c( "#7294D4", "#5B1A18"),
+A + scale_color_manual(values=c( "#C27D38", "#29211F"),
                          name="Fatality Location",
                          breaks=c("MHfat", "Pfat"),
                          labels=c("Mobile Home", "Residential\n[Non-Mobile Home]"))
