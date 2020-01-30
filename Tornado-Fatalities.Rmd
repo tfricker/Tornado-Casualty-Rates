@@ -128,8 +128,6 @@ Over the past 24 years, the number of fatalties per has been rather constant wit
 
 The number of tornado fatalities is greatest in the months of April and May and lowest during the summer (July and August).
 
-
-
 Evaluate the relationship between residential and non-residential fatalities in more detail
 ```{r}
 df <- data.frame(KillerTorn.sf) %>%
