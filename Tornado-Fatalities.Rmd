@@ -16,6 +16,8 @@ library(dplyr)
 library(lubridate)
 library(sf)
 library(zoo)
+library(rgeos)
+library(rgdal)
 ```
 
 Begin by reading in tornado-level estimates of socioeconomic and demographic variables.
@@ -128,6 +130,107 @@ Over the past 24 years, the number of fatalties per has been rather constant wit
 
 The number of tornado fatalities is greatest in the months of April and May and lowest during the summer (July and August).
 
+Idealized Dasymetric Procedure Model
+```{r}
+EF0m = matrix(c(0, 0, 200, 200, 0, 0, 50, 50, 0, 0), 
+              nrow = 5, ncol = 2)
+EF1m = matrix(c(52.9, 52.9, 147.1, 147.1, 52.9, 13.225, 36.775, 36.775, 13.225, 13.225),
+              nrow = 5, ncol = 2)
+EF2m = matrix(c(80, 80, 120, 120, 80, 20, 30, 30, 20, 20), 
+              nrow = 5, ncol = 2)
+EF3m = matrix(c(93.3, 93.3, 106.7, 106.7, 93.3, 23.325, 26.675, 26.675, 23.325, 23.325), 
+              nrow = 5, ncol = 2)
+trackm = matrix(c(-20, 25, 220, 25), nrow = 2, ncol = 2, byrow = TRUE)
+
+theta = -pi/6
+rot = matrix(c(cos(theta), -sin(theta), sin(theta), cos(theta)),
+             nrow = 2, ncol = 2, byrow = TRUE)
+EF0r = EF0m %*% rot
+EF1r = EF1m %*% rot
+EF2r = EF2m %*% rot
+EF3r = EF3m %*% rot
+trackr = trackm %*% rot
+
+EF0 = Polygons(list(Polygon(EF0r)), 0)
+EF1 = Polygons(list(Polygon(EF1r)), 1)
+EF2 = Polygons(list(Polygon(EF2r)), 2)
+EF3 = Polygons(list(Polygon(EF3r)), 3)
+spsNRC3 = SpatialPolygons(list(EF0, EF1, EF2, EF3))
+
+spsNRC3A.df = fortify(spsNRC3)
+spsNRC3A.df$EF = paste("EF", spsNRC3A.df$id, sep = "")
+
+box1 = data.frame(long = c(-50, -50, 0, 0, -50),
+                 lat = c(0, 50, 50, 0, 0))
+box2 = data.frame(long = c(0, 0, 50, 50, 0),
+                 lat = c(0, 50, 50, 0, 0))
+box3 = data.frame(long = c(50, 50, 100, 100, 50),
+                 lat = c(0, 50, 50, 0, 0))
+box4 = data.frame(long = c(100, 100, 150, 150, 100),
+                 lat = c(0, 50, 50, 0, 0))
+box5 = data.frame(long = c(150, 150, 200, 200, 150),
+                 lat = c(0, 50, 50, 0, 0))
+box6 = data.frame(long = c(-50, -50, 0, 0, -50),
+                 lat = c(50, 100, 100, 50, 50))
+box7 = data.frame(long = c(0, 0, 50, 50, 0),
+                 lat = c(50, 100, 100, 50, 50))
+box8 = data.frame(long = c(50, 50, 100, 100, 50),
+                 lat = c(50, 100, 100, 50, 50))
+box9 = data.frame(long = c(100, 100, 150, 150, 100),
+                 lat = c(50, 100, 100, 50, 50))
+box10 = data.frame(long = c(150, 150, 200, 200, 150),
+                 lat = c(50, 100, 100, 50, 50))
+box11 = data.frame(long = c(-50, -50, 0, 0, -50),
+                 lat = c(100, 150, 150, 100, 100))
+box12 = data.frame(long = c(0, 0, 50, 50, 0),
+                 lat = c(100, 150, 150, 100, 100))
+box13 = data.frame(long = c(50, 50, 100, 100, 50),
+                 lat = c(100, 150, 150, 100, 100))
+box14 = data.frame(long = c(100, 100, 150, 150, 100),
+                 lat = c(100, 150, 150, 100, 100))
+box15 = data.frame(long = c(150, 150, 200, 200, 150),
+                 lat = c(100, 150, 150, 100, 100))
+
+box.df = rbind(box1, box2, box3, box4, box5, box6, box7, box8, box9, box10, box11, box12, box13, box14, box15)
+box.df$inc = rep(c("< 10", "10 - 20", "31 - 40", "10 - 20", "< 10", "< 10", "21 - 30", "> 40", "21 - 30", "< 10", "< 10", "10 - 20", "31 - 40", "10 - 20", "< 10"), each = 5)
+box.df$id = rep(c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15), each = 5)
+
+lims = c("< 10", "10 - 20", "21 - 30", "31 - 40", "> 40")
+brks = c("< 10", "10 - 20", "21 - 30", "31 - 40", "> 40") 
+vals = c("#eff3ff", "#bdd7e7", "#6baed6", "#3182bd", "#08519c") 
+
+ggplot(spsNRC3A.df[spsNRC3A.df$EF == "EF0", ], aes(x = long, y = lat)) +
+  scale_x_continuous(limits = c(-50, 200)) +
+  scale_y_continuous(limits = c(0, 150)) +
+  coord_fixed() +
+  geom_polygon(mapping = aes(long, lat, fill = factor(inc), group = id), data = box.df) +
+  geom_polygon(mapping = aes(long, lat, fill = factor(inc), group = id), data = box.df, color = "white", show_guide=FALSE) +
+  geom_polygon(fill = "transparent", color = "black") +
+  scale_fill_manual(name = expression("Population"), limits = lims, breaks = brks, values = vals) +
+  geom_segment(x = trackr[1, 1], 
+               xend = trackr[2, 1], 
+               y = trackr[1, 2], 
+               yend = trackr[2, 2], 
+               arrow = grid::arrow(length = grid::unit(.6, "cm"), type = "closed"), 
+               size = 1.0, 
+               color = "black") +
+  xlab("") + ylab("") +
+   theme(panel.background = element_blank(),
+        panel.grid.major = element_line(colour = "gray", 
+                                        size = .25, 
+                                        linetype = 'dashed'),
+        panel.grid.minor = element_blank(),
+        axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        strip.background = element_blank()) 
+```
+
+What do residential and non-residential fatality rates look like?
+```{r}
+(sum(KillerTorn.sf$MHfat) + sum(KillerTorn.sf$Pfat))/sum(KillerTorn.sf$TotalPp)
+sum(KillerTorn.sf$Ofat)/sum(KillerTorn.sf$TotalPp)
+```
+
 Evaluate the relationship between residential and non-residential fatalities in more detail
 ```{r}
 df <- data.frame(KillerTorn.sf) %>%
@@ -156,7 +259,7 @@ ggplot(df, aes(x = yr, y = NRfat)) +
 
 ggplot(df, aes(x = yr, y = Ratio)) +
   geom_bar(stat = "identity") + 
-  geom_smooth(method = lm, color = "red", size = .35, se = TRUE) +
+  geom_smooth(method = lm, size = .35, se = TRUE) +
   xlab("Year") +
   ylab("Non-Residential Fatalities:Residential Fatalities") +
 #  coord_cartesian(ylim = c(0, 300)) +
@@ -195,6 +298,9 @@ B <- B + scale_fill_manual(values=c( "#7294D4", "#5B1A18"),
                          labels=c("Residential", "Non-Residential"))
 
 multiplot(A, B, cols = 2)
+
+A = A + ggtitle("A") + 
+  theme(plot.title=element_text(hjust=0))
 ```
 
 Summarize fatality information
@@ -223,7 +329,7 @@ Look at the ratio by month
 ```{r}
 ggplot(df2, aes(x = mo, y = Ratio)) +
   geom_bar(stat = "identity") + 
-  geom_smooth(method = loess, color = "red", size = .35, se = TRUE) +
+  #geom_smooth(method = loess, color = "red", size = .35, se = TRUE) +
   scale_x_continuous(breaks = seq(1,12), labels = df2$MonthF, minor_breaks = NULL) +
   xlab("Year") +
   ylab("Non-Residential Fatalities:Residential Fatalities") +
@@ -231,13 +337,12 @@ ggplot(df2, aes(x = mo, y = Ratio)) +
   theme_minimal()
 ```
 
-
 Again, compare on the same plane.
 ```{r}
 dfM2 <- melt(data = df2, id.vars = c("mo", "Rci", "NRci"), measure.vars = c("Rfat", "NRfat"))
 
-dfM2 = melt(data = df2, id.vars = c("mo", "nT"), measure.vars = c("Rfat", "NRfat")) %>%
-  mutate(ci = qt(0.975, df = nT -1) * sd(value)/sqrt(nT))
+#dfM2 = melt(data = df2, id.vars = c("mo", "nT"), measure.vars = c("Rfat", "NRfat")) %>%
+#  mutate(ci = qt(0.975, df = nT -1) * sd(value)/sqrt(nT))
 
 errors = aggregate(.~ mo + variable, 
                    data = dfM2, 
@@ -286,12 +391,23 @@ D = D + ggtitle("D") +
 Plot yearly and monthly relationships together
 ```{r}
 multiplot(A, B, C, D, cols = 2)
+
+#multiplot(A, D, cols = 1)
 ```
 
 
 Next, compare the relationship between mobile homes and permanent homes.
+
+Look at fatality rates
+```{r}
+sum(KillerTorn.sf$MHfat)/sum(KillerTorn.sf$MHPop)
+sum(KillerTorn.sf$Pfat)/(sum(KillerTorn.sf$TotalPp) - sum(KillerTorn.sf$MHPop))
+```
+
+
 ```{r}
 dfM <- melt(data = df, id.vars = "yr", measure.vars = c("MHfat", "Pfat"))
+dfM2 <- melt(data = df2, id.vars = "mo", measure.vars = c("MHfat", "Pfat"))
 
 A <- ggplot(dfM, aes(x = yr, y = value, colour = variable)) +
   geom_point() + geom_smooth(method = lm, size = .35, se = FALSE) +
@@ -299,13 +415,29 @@ A <- ggplot(dfM, aes(x = yr, y = value, colour = variable)) +
   ylab("Number of Fatalities") +
   theme_minimal()
 
+B <- ggplot(dfM2, aes(x = mo, y = value, fill = variable)) +
+  geom_bar(stat = "identity", position = "dodge") + 
+  scale_x_continuous(breaks = seq(1,12), labels = df2$MonthF, minor_breaks = NULL) +
+  xlab("Month") +
+  ylab("Number of Fatalities") +
+  theme_minimal()
+
 pal = wes_palette("Moonrise1")
 pal2 = wes_palette("Moonrise2")
 
-A + scale_color_manual(values=c( "#C27D38", "#29211F"),
+A <- A + scale_color_manual(values=c( "#C27D38", "#29211F"),
                          name="Fatality Location",
                          breaks=c("MHfat", "Pfat"),
                          labels=c("Mobile Home", "Residential\n[Non-Mobile Home]"))
+
+B <- B + scale_fill_manual(values=c( "#C27D38", "#29211F"),
+                         name="Fatality Location",
+                         labels=c("Mobile Home", "Residential\n[Non-Mobile Home]"))
+```
+
+Plot yearly and monthly relationships together
+```{r}
+multiplot(A, B, cols = 1)
 ```
 
 Try without 2011
