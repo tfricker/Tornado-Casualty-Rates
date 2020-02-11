@@ -425,14 +425,20 @@ B <- ggplot(dfM2, aes(x = mo, y = value, fill = variable)) +
 pal = wes_palette("Moonrise1")
 pal2 = wes_palette("Moonrise2")
 
-A <- A + scale_color_manual(values=c( "#C27D38", "#29211F"),
+A <- A + scale_color_manual(values=c( "#D67236", "#E6A0C4"),
                          name="Fatality Location",
                          breaks=c("MHfat", "Pfat"),
                          labels=c("Mobile Home", "Residential\n[Non-Mobile Home]"))
 
-B <- B + scale_fill_manual(values=c( "#C27D38", "#29211F"),
+B <- B + scale_fill_manual(values=c( "#D67236", "#E6A0C4"),
                          name="Fatality Location",
                          labels=c("Mobile Home", "Residential\n[Non-Mobile Home]"))
+
+A = A + ggtitle("A") + 
+  theme(plot.title=element_text(hjust=0))
+
+B = B + ggtitle("B") + 
+  theme(plot.title=element_text(hjust=0))
 ```
 
 Plot yearly and monthly relationships together
