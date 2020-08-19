@@ -1,0 +1,567 @@
+---
+title: "Tornado-Fatalities.Rmd"
+author: "Tyler Fricker"
+date: "9/20/2019"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+The goal of this paper is to provide information on tornado fatalities in a current context. Tornado-level information on the number of tornado fatalities is available from the NWS in the form of SVRGIS data. Additional information on the location of each fatality, if known, can be found through Storm Data.
+
+Load packages.
+```{r}
+library(ggplot2)
+library(dplyr)
+library(lubridate)
+library(sf)
+library(zoo)
+library(rgeos)
+library(rgdal)
+```
+
+Begin by reading in tornado-level estimates of socioeconomic and demographic variables.
+```{r}
+#unzip("SocialCorrelates.zip")
+TornSC.sf <- st_read(dsn = "SocialCorrelates", 
+                    layer = "SocialCorrelates", 
+                    stringsAsFactors = FALSE) %>%
+  mutate(date = as.Date(date),
+         DateTim = as.POSIXct(paste(yr, mo, dy, time), format = "%Y%m%d%H:%M:%S"))
+```
+
+Subset by only those tornadoes that have caused at least one fatality.
+```{r}
+KillerTorn.sf <- TornSC.sf[TornSC.sf$fat > 0,]
+```
+
+Read in killer tornadoes csv (now TornadoFatalities.csv) and add fatality types and mobile home population. To calculate mobile home population, find the average number of people living in mobile homes (total pop (20 million) / mobile homes (8684414)). This value is 2.3.
+
+This mobile home information is found using 2010 (2008--2012) ACS 5-year estimate selected housing characteristics data (https://data.census.gov/cedsci/table?q=housing%20units&hidePreview=false&tid=ACSDP5Y2012.DP04&t=Housing%20Units&vintage=2018).
+```{r}
+KillerTorn.df <- read.csv("TornadoFatalities.csv")
+
+# Fatality locations
+KillerTorn.sf$Pfat = KillerTorn.df$permanent_fat
+KillerTorn.sf$MHfat = KillerTorn.df$mobile_fat
+KillerTorn.sf$Ofat = KillerTorn.df$other_fat
+KillerTorn.sf$Ufat = KillerTorn.df$unknown_fat
+KillerTorn.sf$Busfat = KillerTorn.df$business_fat
+KillerTorn.sf$Chfat = KillerTorn.df$church_fat
+KillerTorn.sf$Schfat = KillerTorn.df$school_fat
+KillerTorn.sf$PermSfat = KillerTorn.df$permstructure_fat
+KillerTorn.sf$Outfat = KillerTorn.df$outside_fat
+KillerTorn.sf$Vehfat = KillerTorn.df$vehicle_fat
+
+#Fatality information
+KillerTorn.sf$Malefat = KillerTorn.df$male_fat
+KillerTorn.sf$Femalefat = KillerTorn.df$female_fat
+KillerTorn.sf$UGen = KillerTorn.df$unknown_gender
+KillerTorn.sf$Un18fat = KillerTorn.df$fat_under18
+KillerTorn.sf$fat_18t44 = KillerTorn.df$fat_18t44
+KillerTorn.sf$fat_45t74 = KillerTorn.df$fat_45t64
+KillerTorn.sf$Ovr65fat = KillerTorn.df$fat_over65
+KillerTorn.sf$UAge = KillerTorn.df$unknown_age
+
+
+KillerTorn.sf$MHPop = KillerTorn.sf$MoblHms * 2.3
+```
+
+## Preliminary Analysis
+
+Investigate fatalities in more detail. Begin with annual information.
+```{r}
+df <- data.frame(KillerTorn.sf) %>%
+  group_by(yr) %>%
+  summarize(nT = n(),
+            nF = sum(fat))
+
+summary(df$nT)
+```
+
+On average, over the past 24 years, over 20 (20.6) people have been killed in tornadoes per year. The median number of annual fatalities is 17.5 with an inter-quartile range between 13 and 25.
+
+Create plots showing the number of fatalities by year and the numbr of killer tornadoes by year.
+```{r}
+A <- ggplot(df, aes(x = yr, y = nF)) +
+  geom_line() +
+  geom_smooth() +
+  xlab("Year") +
+  ylab("Number of Fatalities") +
+  scale_y_continuous(breaks = c(-200, 0, 200, 400), labels = c("",0, 200, 400)) +
+  theme_minimal()
+
+B <- ggplot(df, aes(x = yr, y = nT)) +
+  geom_line() +
+  geom_smooth() +
+  xlab("Year") +
+  ylab("Number of Killer Tornadoes") +
+  theme_minimal()
+```
+
+Then move on to a plot on the number of fatalities per month.
+```{r}
+df2 <- data.frame(KillerTorn.sf) %>%
+  group_by(mo) %>%
+  summarize(nT = n(),
+            nF = sum(fat)) %>%
+  mutate(MonthF = factor(month.abb[mo], levels = month.abb))
+
+C <- ggplot(df2, aes(x = mo, y = nF)) +
+  geom_bar(stat = "identity") + 
+  scale_x_continuous(breaks = seq(1,12), labels = df2$MonthF, minor_breaks = NULL) +
+  xlab("") +
+  ylab("Number of Fatalities") +
+  theme_minimal()
+```
+
+Finally find the cumulative distribution and plot it on a log-log scale.
+```{r}
+df3 <- data.frame(table(KillerTorn.sf$fat))
+
+D = ggplot(df3, aes(x = as.integer(Var1), y = Freq)) +
+  scale_x_log10() + scale_y_log10() +
+  geom_point() + 
+  xlab(expression(paste("Number of Fatalities"))) +
+  ylab("Number of Tornadoes") +
+  theme_minimal()
+```
+
+Multiplot
+```{r}
+source("http://peterhaschke.com/Code/multiplot.R")
+
+A = A + ggtitle("A") + 
+  theme(plot.title=element_text(hjust=0))
+
+B = B + ggtitle("B") + 
+  theme(plot.title=element_text(hjust=0))
+
+C = C + ggtitle("C") + 
+  theme(plot.title=element_text(hjust=0))
+
+D = D + ggtitle("D") + 
+  theme(plot.title=element_text(hjust=0))
+
+multiplot(A, C, B, D, cols = 2)
+```
+
+Over the past 24 years, the number of fatalties per has been rather constant with a slight decrease over the past 5+ years. The number of killer tornadoes has also been rather constant with a slight decreease over the past 5+ years.
+
+Model this rate
+```{r}
+model1 = lm(cas ~ Year, data = TornSC.sf[TornSC.sf$Year >= 2007,])
+summary(model1)
+
+model2 = lm(fat ~ Year, data = TornSC.sf[TornSC.sf$Year >= 2007,])
+summary(model2)
+```
+
+The number of tornado fatalities is greatest in the months of April and May and lowest during the summer (July and August).
+
+Idealized Dasymetric Procedure Model
+```{r}
+EF0m = matrix(c(0, 0, 200, 200, 0, 0, 50, 50, 0, 0), 
+              nrow = 5, ncol = 2)
+EF1m = matrix(c(52.9, 52.9, 147.1, 147.1, 52.9, 13.225, 36.775, 36.775, 13.225, 13.225),
+              nrow = 5, ncol = 2)
+EF2m = matrix(c(80, 80, 120, 120, 80, 20, 30, 30, 20, 20), 
+              nrow = 5, ncol = 2)
+EF3m = matrix(c(93.3, 93.3, 106.7, 106.7, 93.3, 23.325, 26.675, 26.675, 23.325, 23.325), 
+              nrow = 5, ncol = 2)
+trackm = matrix(c(-20, 25, 220, 25), nrow = 2, ncol = 2, byrow = TRUE)
+
+theta = -pi/6
+rot = matrix(c(cos(theta), -sin(theta), sin(theta), cos(theta)),
+             nrow = 2, ncol = 2, byrow = TRUE)
+EF0r = EF0m %*% rot
+EF1r = EF1m %*% rot
+EF2r = EF2m %*% rot
+EF3r = EF3m %*% rot
+trackr = trackm %*% rot
+
+EF0 = Polygons(list(Polygon(EF0r)), 0)
+EF1 = Polygons(list(Polygon(EF1r)), 1)
+EF2 = Polygons(list(Polygon(EF2r)), 2)
+EF3 = Polygons(list(Polygon(EF3r)), 3)
+spsNRC3 = SpatialPolygons(list(EF0, EF1, EF2, EF3))
+
+spsNRC3A.df = fortify(spsNRC3)
+spsNRC3A.df$EF = paste("EF", spsNRC3A.df$id, sep = "")
+
+box1 = data.frame(long = c(-50, -50, 0, 0, -50),
+                 lat = c(0, 50, 50, 0, 0))
+box2 = data.frame(long = c(0, 0, 50, 50, 0),
+                 lat = c(0, 50, 50, 0, 0))
+box3 = data.frame(long = c(50, 50, 100, 100, 50),
+                 lat = c(0, 50, 50, 0, 0))
+box4 = data.frame(long = c(100, 100, 150, 150, 100),
+                 lat = c(0, 50, 50, 0, 0))
+box5 = data.frame(long = c(150, 150, 200, 200, 150),
+                 lat = c(0, 50, 50, 0, 0))
+box6 = data.frame(long = c(-50, -50, 0, 0, -50),
+                 lat = c(50, 100, 100, 50, 50))
+box7 = data.frame(long = c(0, 0, 50, 50, 0),
+                 lat = c(50, 100, 100, 50, 50))
+box8 = data.frame(long = c(50, 50, 100, 100, 50),
+                 lat = c(50, 100, 100, 50, 50))
+box9 = data.frame(long = c(100, 100, 150, 150, 100),
+                 lat = c(50, 100, 100, 50, 50))
+box10 = data.frame(long = c(150, 150, 200, 200, 150),
+                 lat = c(50, 100, 100, 50, 50))
+box11 = data.frame(long = c(-50, -50, 0, 0, -50),
+                 lat = c(100, 150, 150, 100, 100))
+box12 = data.frame(long = c(0, 0, 50, 50, 0),
+                 lat = c(100, 150, 150, 100, 100))
+box13 = data.frame(long = c(50, 50, 100, 100, 50),
+                 lat = c(100, 150, 150, 100, 100))
+box14 = data.frame(long = c(100, 100, 150, 150, 100),
+                 lat = c(100, 150, 150, 100, 100))
+box15 = data.frame(long = c(150, 150, 200, 200, 150),
+                 lat = c(100, 150, 150, 100, 100))
+
+box.df = rbind(box1, box2, box3, box4, box5, box6, box7, box8, box9, box10, box11, box12, box13, box14, box15)
+box.df$inc = rep(c("< 10", "10 - 20", "31 - 40", "10 - 20", "< 10", "< 10", "21 - 30", "> 40", "21 - 30", "< 10", "< 10", "10 - 20", "31 - 40", "10 - 20", "< 10"), each = 5)
+box.df$id = rep(c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15), each = 5)
+
+lims = c("< 10", "10 - 20", "21 - 30", "31 - 40", "> 40")
+brks = c("< 10", "10 - 20", "21 - 30", "31 - 40", "> 40") 
+vals = c("#eff3ff", "#bdd7e7", "#6baed6", "#3182bd", "#08519c") 
+
+ggplot(spsNRC3A.df[spsNRC3A.df$EF == "EF0", ], aes(x = long, y = lat)) +
+  scale_x_continuous(limits = c(-50, 200)) +
+  scale_y_continuous(limits = c(0, 150)) +
+  coord_fixed() +
+  geom_polygon(mapping = aes(long, lat, fill = factor(inc), group = id), data = box.df) +
+  geom_polygon(mapping = aes(long, lat, fill = factor(inc), group = id), data = box.df, color = "white", show_guide=FALSE) +
+  geom_polygon(fill = "transparent", color = "black") +
+  scale_fill_manual(name = expression("Population"), limits = lims, breaks = brks, values = vals) +
+  geom_segment(x = trackr[1, 1], 
+               xend = trackr[2, 1], 
+               y = trackr[1, 2], 
+               yend = trackr[2, 2], 
+               arrow = grid::arrow(length = grid::unit(.6, "cm"), type = "closed"), 
+               size = 1.0, 
+               color = "black") +
+  xlab("") + ylab("") +
+   theme(panel.background = element_blank(),
+        panel.grid.major = element_line(colour = "gray", 
+                                        size = .25, 
+                                        linetype = 'dashed'),
+        panel.grid.minor = element_blank(),
+        axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        strip.background = element_blank()) 
+```
+
+What do residential and non-residential fatality rates look like?
+```{r}
+(sum(KillerTorn.sf$MHfat) + sum(KillerTorn.sf$Pfat))/sum(KillerTorn.sf$TotalPp)
+sum(KillerTorn.sf$Ofat)/sum(KillerTorn.sf$TotalPp)
+```
+
+Evaluate the relationship between residential and non-residential fatalities in more detail
+```{r}
+df <- data.frame(KillerTorn.sf) %>%
+  group_by(yr) %>%
+  summarize(nT = n(),
+         MHfat = sum(MHfat),
+         NRfat = sum(Ofat),
+         Pfat = sum(Pfat),
+         Ufat = sum(Ufat),
+         Rfat = sum(MHfat) + sum(Pfat)) %>%
+  mutate(Ratio = NRfat/Rfat)
+
+ggplot(df, aes(x = yr, y = Rfat)) +
+  geom_point() + geom_smooth(method = lm, color = "black", size = .35, se = FALSE) +
+  xlab("Year") +
+  ylab("Residential Fatalities") +
+#  coord_cartesian(ylim = c(0, 300)) +
+  theme_minimal()
+
+ggplot(df, aes(x = yr, y = NRfat)) +
+  geom_point() + geom_smooth(method = lm, color = "black", size = .35) +
+  xlab("Year") +
+  ylab("Non-Residential Fatalities") +
+#  coord_cartesian(ylim = c(0, 300)) +
+  theme_minimal()
+
+ggplot(df, aes(x = yr, y = Ratio)) +
+  geom_bar(stat = "identity") + 
+  geom_smooth(method = lm, size = .35, se = TRUE) +
+  xlab("Year") +
+  ylab("Non-Residential Fatalities:Residential Fatalities") +
+#  coord_cartesian(ylim = c(0, 300)) +
+  theme_minimal()
+
+ggplot(df, aes(x = yr, y = Ratio)) +
+  geom_point() + 
+  geom_smooth(method = lm, se = TRUE) +
+  xlab("Year") +
+  ylab("Non-Residential Fatalities:Residential Fatalities") +
+#  coord_cartesian(ylim = c(0, 300)) +
+  theme_minimal()
+```
+
+Try to plot on same plane
+```{r}
+library(reshape2)
+library(wesanderson)
+
+dfM = melt(data = df, id.vars = "yr", measure.vars = c("Rfat", "NRfat"))
+
+A = ggplot(dfM, aes(x = yr, y = value, colour = variable)) +
+  geom_point() + geom_smooth(method = lm, size = .35, se = FALSE) +
+  xlab("Year") +
+  ylab("Number of Fatalities") +
+  theme_minimal()
+
+pal = wes_palette("GrandBudapest1")
+pal2 = wes_palette("GrandBudapest2")
+
+A <- A + scale_color_manual(values=c( "#7294D4", "#5B1A18"),
+                         name="Fatality Location",
+                         breaks=c("Rfat", "NRfat"),
+                         labels=c("Residential", "Non-Residential"))
+
+B <- ggplot(dfM, aes(x = yr, y = value, fill = variable)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  xlab("Year") +
+  ylab("Number of Fatalities") +
+  theme_minimal()
+  
+B <- B + scale_fill_manual(values=c( "#7294D4", "#5B1A18"),
+                         name="Fatality Location",
+                         labels=c("Residential", "Non-Residential"))
+
+multiplot(A, B, cols = 2)
+
+A = A + ggtitle("A") + 
+  theme(plot.title=element_text(hjust=0))
+```
+
+Summarize fatality information
+```{r}
+summary(df)
+```
+
+Look at the seasonality of tornado fatality locations
+```{r}
+df2 <- data.frame(KillerTorn.sf) %>%
+  group_by(mo) %>%
+  summarize(nT = n(),
+         MHfat = sum(MHfat),
+         NRfat = sum(Ofat),
+         Pfat = sum(Pfat),
+         Ufat = sum(Ufat),
+         Rfat = sum(MHfat) + sum(Pfat)) %>%
+  mutate(Ratio = NRfat/Rfat,
+         MonthF = factor(month.abb[mo], levels = month.abb),
+         Rci = qt(0.9, df = nT - 1) * sd(Rfat)/sqrt(nT),
+         NRci = qt(0.9, df = nT - 1) * sd(NRfat)/sqrt(nT),
+         geometry = NULL) 
+```
+
+Look at the ratio by month
+```{r}
+ggplot(df2, aes(x = mo, y = Ratio)) +
+  geom_bar(stat = "identity") + 
+  #geom_smooth(method = loess, color = "red", size = .35, se = TRUE) +
+  scale_x_continuous(breaks = seq(1,12), labels = df2$MonthF, minor_breaks = NULL) +
+  xlab("Year") +
+  ylab("Non-Residential Fatalities:Residential Fatalities") +
+#  coord_cartesian(ylim = c(0, 300)) +
+  theme_minimal()
+```
+
+Again, compare on the same plane.
+```{r}
+dfM2 <- melt(data = df2, id.vars = c("mo", "Rci", "NRci"), measure.vars = c("Rfat", "NRfat"))
+
+#dfM2 = melt(data = df2, id.vars = c("mo", "nT"), measure.vars = c("Rfat", "NRfat")) %>%
+#  mutate(ci = qt(0.975, df = nT -1) * sd(value)/sqrt(nT))
+
+errors = aggregate(.~ mo + variable, 
+                   data = dfM2, 
+                   FUN = sd)
+
+C = ggplot(dfM2, aes(x = mo, y = value, colour = variable)) +
+  geom_point(position = position_dodge(0.5)) +
+  #geom_smooth(method = "lm", size = .35, se = FALSE) +
+  geom_errorbar(data = dfM2[dfM2$variable == "Rfat",], aes(ymin = ifelse(value-Rci < 0, 0, value-Rci), ymax = value + Rci), 
+                width = .25, 
+                position = position_dodge(-1.5)) +
+  geom_errorbar(data = dfM2[dfM2$variable == "NRfat",], aes(ymin = ifelse(value-NRci < 0, 0, value-NRci), ymax = value + NRci), 
+                width = .25, 
+                position = position_dodge(0.5)) +
+  scale_x_continuous(breaks = seq(1,12), labels = df2$MonthF, minor_breaks = NULL) +
+  xlab("Month") +
+  ylab("Number of Fatalities") +
+  theme_minimal()
+
+pal = wes_palette("GrandBudapest1")
+pal2 = wes_palette("GrandBudapest2")
+
+C <- C + scale_color_manual(values=c( "#7294D4", "#5B1A18"),
+                         name="Fatality Location",
+                         breaks=c("Rfat", "NRfat"),
+                         labels=c("Residential", "Non-Residential"))
+
+D <- ggplot(dfM2, aes(x = mo, y = value, fill = variable)) +
+  geom_bar(stat = "identity", position = "dodge") + 
+  scale_x_continuous(breaks = seq(1,12), labels = df2$MonthF, minor_breaks = NULL) +
+  xlab("Month") +
+  ylab("Number of Fatalities") +
+  theme_minimal()
+  
+D <- D + scale_fill_manual(values=c( "#7294D4", "#5B1A18"),
+                         name="Fatality Location",
+                         labels=c("Residential", "Non-Residential"))
+
+C = C + ggtitle("C") + 
+  theme(plot.title=element_text(hjust=0))
+
+D = D + ggtitle("D") + 
+  theme(plot.title=element_text(hjust=0))
+```
+
+Plot yearly and monthly relationships together
+```{r}
+multiplot(A, B, C, D, cols = 2)
+
+#multiplot(A, D, cols = 1)
+```
+
+Next, compare the relationship between mobile homes and permanent homes.
+
+Look at fatality rates
+```{r}
+sum(KillerTorn.sf$MHfat)/sum(KillerTorn.sf$MHPop)
+sum(KillerTorn.sf$Pfat)/(sum(KillerTorn.sf$TotalPp) - sum(KillerTorn.sf$MHPop))
+```
+
+```{r}
+dfM <- melt(data = df, id.vars = "yr", measure.vars = c("MHfat", "Pfat"))
+dfM2 <- melt(data = df2, id.vars = "mo", measure.vars = c("MHfat", "Pfat"))
+
+A <- ggplot(dfM, aes(x = yr, y = value, colour = variable)) +
+  geom_point() + geom_smooth(method = lm, size = .35, se = FALSE) +
+  xlab("Year") +
+  ylab("Number of Fatalities") +
+  theme_minimal()
+
+B <- ggplot(dfM2, aes(x = mo, y = value, fill = variable)) +
+  geom_bar(stat = "identity", position = "dodge") + 
+  scale_x_continuous(breaks = seq(1,12), labels = df2$MonthF, minor_breaks = NULL) +
+  xlab("Month") +
+  ylab("Number of Fatalities") +
+  theme_minimal()
+
+pal = wes_palette("Moonrise1")
+pal2 = wes_palette("Moonrise2")
+
+A <- A + scale_color_manual(values=c( "#D67236", "#E6A0C4"),
+                         name="Fatality Location",
+                         breaks=c("MHfat", "Pfat"),
+                         labels=c("Mobile Home", "Residential\n[Non-Mobile Home]"))
+
+B <- B + scale_fill_manual(values=c( "#D67236", "#E6A0C4"),
+                         name="Fatality Location",
+                         labels=c("Mobile Home", "Residential\n[Non-Mobile Home]"))
+
+A = A + ggtitle("A") + 
+  theme(plot.title=element_text(hjust=0))
+
+B = B + ggtitle("B") + 
+  theme(plot.title=element_text(hjust=0))
+```
+
+Plot yearly and monthly relationships together
+```{r}
+multiplot(A, B, cols = 1)
+```
+
+Try without 2011
+```{r}
+df2 = data.frame(df) %>%
+  filter(yr != 2011) %>%
+  select(yr, MHfat, Pfat)
+
+df2[nrow(df2) + 1,] = c(2011, 26, 19)
+
+df2M = melt(data = df2, id.vars = "yr", measure.vars = c("MHfat", "Pfat"))
+
+A = ggplot(df2M, aes(x = yr, y = value, colour = variable)) +
+  geom_point() + geom_smooth(method = lm, size = .35, se = FALSE) +
+  xlab("Year") +
+  ylab("Number of Fatalities") +
+  theme_minimal()
+
+pal = wes_palette("GrandBudapest1")
+pal2 = wes_palette("GrandBudapest2")
+
+A + scale_color_manual(values=c( "#7294D4", "#5B1A18"),
+                         name="Fatality Location",
+                         breaks=c("MHfat", "Pfat"),
+                         labels=c("Mobile Home", "Residential\n[Non-Mobile Home]"))
+```
+
+```{r}
+df2 <- KillerTorn.sf %>%
+  group_by(st) %>%
+  summarize(MHfat = sum(MHfat),
+            MH = sum(MoblHms),
+            MHfatRate = sum(MHfat)/sum(MoblHms)) %>%
+  filter(MHfat >= 10) %>%
+  arrange(desc(MHfatRate))
+```
+
+Look at fatality information
+
+Age by Total
+```{r}
+df = data.frame(KillerTorn.sf) %>%
+  summarise(Under18Fat = sum(Un18fat),
+         Fat18t44 = sum(fat_18t44),
+         Fat45t64 = sum(fat_45t74),
+         Over65Fat = sum(Ovr65fat),
+         Under18Pop = sum(MlUnd18 + FmlUn18),
+         Pop18t44 = sum(Ml18t44 + Fml1844),
+         Pop45t64 = sum(Ml45t64 + Fml4564),
+         Over65Pop = sum(MlOvr65 + FmlOv65)) %>%
+  reshape2::melt(.)
+
+A = ggplot(df[1:4,], aes(x = variable, y = value)) + 
+  geom_bar(stat = "identity") +
+  theme_minimal()
+
+B = ggplot(df[5:8,], aes(x = variable, y = value)) + 
+  geom_bar(stat = "identity") +
+  theme_minimal()
+
+multiplot(A, B, cols = 1)
+```
+
+Age by Percentage
+```{r}
+df = data.frame(KillerTorn.sf) %>%
+  summarise(Under18Fat = sum(Un18fat)/sum(fat),
+         Fat18t44 = sum(fat_18t44)/sum(fat),
+         Fat45t64 = sum(fat_45t74)/sum(fat),
+         Over65Fat = sum(Ovr65fat)/sum(fat),
+         Under18Pop = sum(MlUnd18 + FmlUn18)/sum(TotalPp),
+         Pop18t44 = sum(Ml18t44 + Fml1844)/sum(TotalPp),
+         Pop45t64 = sum(Ml45t64 + Fml4564)/sum(TotalPp),
+         Over65Pop = sum(MlOvr65 + FmlOv65)/sum(TotalPp)) %>%
+  reshape2::melt(.)
+
+A = ggplot(df[1:4,], aes(x = variable, y = value)) + 
+  geom_bar(stat = "identity") +
+  theme_minimal()
+
+B = ggplot(df[5:8,], aes(x = variable, y = value)) + 
+  geom_bar(stat = "identity") +
+  theme_minimal()
+
+multiplot(A, B, cols = 1)
+```
