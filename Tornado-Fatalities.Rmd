@@ -255,7 +255,7 @@ ggplot(spsNRC3A.df[spsNRC3A.df$EF == "EF0", ], aes(x = long, y = lat)) +
         strip.background = element_blank()) 
 ```
 
-### Tornado fatality rates by year and by month ###
+### Tornado fatality rates by year, month, and hour ###
 
 Per-captia and per-housing unit fatality rates
 ```{r}
@@ -291,7 +291,7 @@ Plot the monthly rates
 A = ggplot(df, aes(x = mo, y = PCfatRate)) +
   geom_bar(stat = "identity") +
   coord_polar() +
-  scale_x_continuous(breaks = seq(1,12), labels = df2$MonthF, minor_breaks = NULL) +
+  scale_x_continuous(breaks = seq(1,12), labels = df$MonthF, minor_breaks = NULL) +
   xlab("") +
   scale_y_continuous(labels = label_percent(accuracy = .01, scale = 100)) +
   ylab("Per-Capita Fatality Rate") +
@@ -302,7 +302,7 @@ A = ggplot(df, aes(x = mo, y = PCfatRate)) +
 B = ggplot(df, aes(x = mo, y = PHUfatRate)) +
   geom_bar(stat = "identity") +
   coord_polar() +
-  scale_x_continuous(breaks = seq(1,12), labels = df2$MonthF, minor_breaks = NULL) +
+  scale_x_continuous(breaks = seq(1,12), labels = df$MonthF, minor_breaks = NULL) +
   xlab("") +
   scale_y_continuous(labels = label_percent(accuracy = .01, scale = 100)) +
   ylab("Per-Housing Unit Fatality Rate") +
@@ -318,6 +318,51 @@ B = B + ggtitle("B") +
 
 multiplot(A, B, cols = 2)
 ```
+
+Hourly Rates
+```{r}
+df <- data.frame(KillerTorn.sf) %>%
+  group_by(Hour) %>%
+  summarize(PCfatRate = sum(fat)/sum(TotalPp),
+            PHUfatRate = sum(fat)/sum(TtlHsnU),
+            pop = sum(TotalPp),
+            HU = sum(TtlHsnU),
+            nT = n())
+
+C = ggplot(df, aes(x = Hour, y = PCfatRate)) +
+  geom_bar(stat = "identity") +
+  coord_polar() +
+  scale_x_continuous(breaks = c(0, 3, 6, 9, 12, 15, 18, 21), labels = c("12:00 AM", "3:00 AM", "6:00 AM", "9:00 AM", "12:00 PM", "3:00 PM", "6:00 PM", "9:00 PM")) +
+  xlab("") +
+  scale_y_continuous(labels = label_percent(accuracy = .01, scale = 100)) +
+  ylab("Per-Capita Fatality Rate") +
+  theme_minimal() +
+  theme(axis.ticks.y = element_line(),
+        panel.border = element_rect(fill = NA))
+
+D = ggplot(df, aes(x = Hour, y = PHUfatRate)) +
+  geom_bar(stat = "identity") +
+  coord_polar() +
+  scale_x_continuous(breaks = c(0, 3, 6, 9, 12, 15, 18, 21), labels = c("12:00 AM", "3:00 AM", "6:00 AM", "9:00 AM", "12:00 PM", "3:00 PM", "6:00 PM", "9:00 PM")) +
+  xlab("") +
+  scale_y_continuous(labels = label_percent(accuracy = .01, scale = 100)) +
+  ylab("Per-Housing Unit Fatality Rate") +
+  theme_minimal() +
+  theme(axis.ticks.y = element_line(),
+        panel.border = element_rect(fill = NA))
+
+C = C + ggtitle("C") + 
+  theme(plot.title=element_text(hjust=0))
+
+D = D + ggtitle("D") + 
+  theme(plot.title=element_text(hjust=0))
+
+multiplot(A, C, B, D, cols = 2)
+```
+
+### Tornado fatality rates by location ###
+
+
 
 What do residential and non-residential fatality rates look like?
 ```{r}
