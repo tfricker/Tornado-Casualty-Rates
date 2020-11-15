@@ -153,7 +153,7 @@ The number of tornado fatalities is greatest in the months of April and May and 
 
 Model this rate
 ```{r}
-model1 = lm(cas ~ Year, data = TornSC.sf[TornSC.sf$Year >= 1995,])
+model1 = lm(fat ~ Year, data = TornSC.sf[TornSC.sf$Year >= 1995,])
 summary(model1)
 
 model2 = lm(fat ~ Year, data = TornSC.sf[TornSC.sf$Year >= 2007,])
@@ -362,12 +362,95 @@ multiplot(A, C, B, D, cols = 2)
 
 ### Tornado fatality rates by location ###
 
+```{r}
+df = data.frame(KillerTorn.sf) %>%
+  mutate(other = Busfat + Chfat + Schfat + PermSfat + Outfat + Vehfat) %>%
+  select(Ofat, other)
 
+x = data.frame(df$Ofat == df$other)
+```
+
+
+Break down tornado fatalities by location
+```{r}
+library(reshape2)
+df <-  data.frame(KillerTorn.sf)%>%
+  select(Pfat, MHfat, Ofat, Ufat, Busfat, Chfat, Schfat, 
+         PermSfat, Outfat, Vehfat)
+
+# Reorder columns
+df <- df[c(1,2,5,6,7,8,9,10,3,4)]
+
+df2 <- melt(df) %>%
+  group_by(variable) %>%
+  summarize(nF = sum(value)) %>%
+  rename(Location = variable)
+
+df2$nF[9] = 2 # Correct for the two fatalities that were labeled "other" in Storm Events
+```
+
+Make a barplot of the number of fatalities by location over the study period.
+```{r}
+A <- ggplot(df2, aes(x = Location, y = nF)) +
+  geom_bar(stat = 'identity', aes(fill = Location)) +
+  scale_x_discrete(labels = c('Permanent\nHome', 'Mobile\nHome', 'Business', 'Church', 'School', 'Permanent\nStructure', 'Outside', 'Vehicle', 'Other', 'Unknown')) +
+  xlab("") +
+  ylab("Number of Fatalities") +
+  scale_fill_brewer(palette = 'Paired', 10) +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+A = A + ggtitle("A") + 
+  theme(plot.title=element_text(hjust=0))
+```
+
+Evaluate trends in fatality location over time.
+```{r}
+library(tidyr)
+df <-  data.frame(KillerTorn.sf)%>%
+  select(om, date, st, Year, Pfat, MHfat, Ofat, Ufat, Busfat, Chfat, Schfat, 
+         PermSfat, Outfat, Vehfat, Ufat) %>%
+  mutate(Ofat = Ofat - (Busfat + Chfat + Schfat + PermSfat + Outfat + Vehfat)) %>%
+  group_by(Year) %>%
+  summarize(Pfat = sum(Pfat), MHfat = sum(MHfat), Ofat = sum(Ofat), Ufat = sum(Ufat), Busfat = sum(Busfat), Chfat = sum(Chfat), Schfat = sum(Schfat), PermSfat = sum(PermSfat), Outfat = sum(Outfat), Vehfat = sum(Vehfat))
+
+# Reorder columns
+df <- df[c(1,2,3,6,7,8,9,10,11,4,5)]
+
+df2 <- df %>%
+  gather(key = Year, value = Value) %>%
+  rename(Location = Year) %>%
+  mutate(Year = rep(1995:2018, 10))
+```
+
+Plot it
+```{r}
+# Ensure the levels are aligned with the previous plot
+df2$Location <- factor(df2$Location, levels = unique(df2$Location))
+
+B <- ggplot(df2, aes(x = Year, y = Value)) +
+  geom_line(aes(color = Location), size = 1) +
+  scale_color_brewer(labels = c('Permanent\nHome', 'Mobile\nHome', 'Business', 'Church', 'School', 'Permanent\nStructure', 'Outside', 'Vehicle', 'Other', 'Unknown'), palette = 'Paired', direction = 1) +
+  ylab("Number of Fatalities") +
+  theme_minimal()
+
+
+B = B + ggtitle("B") + 
+  theme(plot.title=element_text(hjust=0))
+
+multiplot(A, B, cols = 1)
+```
 
 What do residential and non-residential fatality rates look like?
 ```{r}
 (sum(KillerTorn.sf$MHfat) + sum(KillerTorn.sf$Pfat))/sum(KillerTorn.sf$TotalPp)
 sum(KillerTorn.sf$Ofat)/sum(KillerTorn.sf$TotalPp)
+```
+
+
+What do vehicle fatality rates look like? To find this, think about vehicles per capita (.831 - found by dividing vehicle registrations by population) (https://www.fhwa.dot.gov/policyinformation/statistics/2018/pdf/mv1.pdf) and per houshold (1.9).'
+```{r}
+
 ```
 
 Evaluate the relationship between residential and non-residential fatalities in more detail
