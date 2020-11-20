@@ -448,7 +448,7 @@ sum(KillerTorn.sf$Ofat)/sum(KillerTorn.sf$TotalPp)
 ```
 
 
-What do vehicle fatality rates look like? To find this, think about vehicles per capita (.831 - found by dividing vehicle registrations by population) (https://www.fhwa.dot.gov/policyinformation/statistics/2018/pdf/mv1.pdf) and per houshold (1.9).'
+What do vehicle fatality rates look like? To find this, think about vehicles per capita (.831 - found by dividing vehicle registrations by population) (https://www.fhwa.dot.gov/policyinformation/statistics/2018/pdf/mv1.pdf) and per household (1.9).'
 ```{r}
 KillerTorn.sf$VehiclePop = KillerTorn.sf$TotalPp * .831
 KillerTorn.sf$VehiclePop2 = KillerTorn.sf$TtlHsnU * 1.9
@@ -634,7 +634,9 @@ Next, compare the relationship between mobile homes and permanent homes.
 Look at fatality rates
 ```{r}
 sum(KillerTorn.sf$MHfat)/sum(KillerTorn.sf$MHPop)
+sum(KillerTorn.sf$MHfat)/sum(KillerTorn.sf$MoblHms)
 sum(KillerTorn.sf$Pfat)/(sum(KillerTorn.sf$TotalPp) - sum(KillerTorn.sf$MHPop))
+sum(KillerTorn.sf$Pfat)/(sum(KillerTorn.sf$TtlHsnU)-sum(KillerTorn.sf$MoblHms))
 ```
 
 ```{r}
