@@ -715,6 +715,8 @@ df2 <- KillerTorn.sf %>%
 
 Look at fatality information
 
+### Tornado fatality rates by Age and Sex ###
+
 Age by Total
 ```{r}
 df = data.frame(KillerTorn.sf) %>%
