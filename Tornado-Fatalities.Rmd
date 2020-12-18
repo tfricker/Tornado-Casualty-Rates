@@ -370,7 +370,6 @@ df = data.frame(KillerTorn.sf) %>%
 x = data.frame(df$Ofat == df$other)
 ```
 
-
 Break down tornado fatalities by location
 ```{r}
 library(reshape2)
@@ -446,7 +445,6 @@ What do residential and non-residential fatality rates look like?
 (sum(KillerTorn.sf$MHfat) + sum(KillerTorn.sf$Pfat))/sum(KillerTorn.sf$TotalPp)
 sum(KillerTorn.sf$Ofat)/sum(KillerTorn.sf$TotalPp)
 ```
-
 
 What do vehicle fatality rates look like? To find this, think about vehicles per capita (.831 - found by dividing vehicle registrations by population) (https://www.fhwa.dot.gov/policyinformation/statistics/2018/pdf/mv1.pdf) and per household (1.9).'
 ```{r}
@@ -640,8 +638,8 @@ sum(KillerTorn.sf$Pfat)/(sum(KillerTorn.sf$TtlHsnU)-sum(KillerTorn.sf$MoblHms))
 ```
 
 ```{r}
-dfM <- melt(data = df, id.vars = "yr", measure.vars = c("MHfat", "Pfat"))
-dfM2 <- melt(data = df2, id.vars = "mo", measure.vars = c("MHfat", "Pfat"))
+dfM <- melt(data = df, id.vars = "yr", measure.vars = c("Pfat","MHfat"))
+dfM2 <- melt(data = df2, id.vars = "mo", measure.vars = c("Pfat", "MHfat"))
 
 A <- ggplot(dfM, aes(x = yr, y = value, colour = variable)) +
   geom_point() + geom_smooth(method = lm, size = .35, se = FALSE) +
@@ -656,17 +654,17 @@ B <- ggplot(dfM2, aes(x = mo, y = value, fill = variable)) +
   ylab("Number of Fatalities") +
   theme_minimal()
 
-pal = wes_palette("Moonrise1")
-pal2 = wes_palette("Moonrise2")
+#pal = wes_palette("Moonrise1")
+#pal2 = wes_palette("Moonrise2")
 
-A <- A + scale_color_manual(values=c( "#D67236", "#E6A0C4"),
+A <- A + scale_color_manual(values=c("#A6CEE3", "#1F78B4"),
                          name="Fatality Location",
-                         breaks=c("MHfat", "Pfat"),
-                         labels=c("Mobile Home", "Residential\n[Non-Mobile Home]"))
+                         breaks=c("Pfat", "MHfat"),
+                         labels=c("Permanent Home", "Mobile Home"))
 
-B <- B + scale_fill_manual(values=c( "#D67236", "#E6A0C4"),
+B <- B + scale_fill_manual(values=c("#A6CEE3", "#1F78B4"),
                          name="Fatality Location",
-                         labels=c("Mobile Home", "Residential\n[Non-Mobile Home]"))
+                         labels=c("Permanent Home", "Mobile Home"))
 
 A = A + ggtitle("A") + 
   theme(plot.title=element_text(hjust=0))
@@ -702,7 +700,7 @@ pal2 = wes_palette("GrandBudapest2")
 A + scale_color_manual(values=c( "#7294D4", "#5B1A18"),
                          name="Fatality Location",
                          breaks=c("MHfat", "Pfat"),
-                         labels=c("Mobile Home", "Residential\n[Non-Mobile Home]"))
+                         labels=c("Mobile Home", "Permanent Home"))
 ```
 
 ```{r}
