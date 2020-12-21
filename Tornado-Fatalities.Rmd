@@ -717,7 +717,7 @@ Look at fatality information
 
 ### Tornado fatality rates by Age and Sex ###
 
-Age by Total
+Find the number of tornado fatalities by age group and the total population by age group
 ```{r}
 df = data.frame(KillerTorn.sf) %>%
   summarise(Under18Fat = sum(Un18fat),
@@ -727,18 +727,51 @@ df = data.frame(KillerTorn.sf) %>%
          Under18Pop = sum(MlUnd18 + FmlUn18),
          Pop18t44 = sum(Ml18t44 + Fml1844),
          Pop45t64 = sum(Ml45t64 + Fml4564),
-         Over65Pop = sum(MlOvr65 + FmlOv65)) %>%
+         Over65Pop = sum(MlOvr65 + FmlOv65))
+```
+
+Per-capita fatality rates by age
+```{r}
+df$Under18Fat/df$Under18Pop * 100
+df$Fat18t44/df$Pop18t44 * 100
+df$Fat45t64/df$Pop45t64 * 100
+df$Over65Fat/df$Over65Pop * 100
+```
+
+Per-housing unit fatality rates by age
+```{r}
+(df$Under18Fat/sum(KillerTorn.sf$TtlHsnU)) * 100
+(df$Fat18t44/sum(KillerTorn.sf$TtlHsnU)) * 100
+(df$Fat45t64/sum(KillerTorn.sf$TtlHsnU)) * 100
+(df$Over65Fat/sum(KillerTorn.sf$TtlHsnU)) * 100
+```
+
+
+```{r}
+df <- df %>%
   reshape2::melt(.)
 
 A = ggplot(df[1:4,], aes(x = variable, y = value)) + 
   geom_bar(stat = "identity") +
+  scale_x_discrete(breaks = c("Under18Fat", "Fat18t44", "Fat45t64", "Over65Fat"), 
+                   labels = c("Under 18", "18 to 44", "45 to 64", "Over 65")) +
+  ylab("Number of Fatalities") +
+  xlab("") +
   theme_minimal()
 
-B = ggplot(df[5:8,], aes(x = variable, y = value)) + 
+C = ggplot(df[5:8,], aes(x = variable, y = value)) + 
   geom_bar(stat = "identity") +
+  scale_x_discrete(breaks = c("Under18Pop", "Pop18t44", "Pop45t64", "Over65Pop"), 
+                   labels = c("Under 18", "18 to 44", "45 to 64", "Over 65")) +
+  ylab("Number of People") +
+  xlab("") +
   theme_minimal()
 
-multiplot(A, B, cols = 1)
+A = A + ggtitle("A") + 
+  theme(plot.title=element_text(hjust=0))
+
+C = C + ggtitle("C") + 
+  theme(plot.title=element_text(hjust=0))
 ```
 
 Age by Percentage
@@ -754,13 +787,31 @@ df = data.frame(KillerTorn.sf) %>%
          Over65Pop = sum(MlOvr65 + FmlOv65)/sum(TotalPp)) %>%
   reshape2::melt(.)
 
-A = ggplot(df[1:4,], aes(x = variable, y = value)) + 
+B = ggplot(df[1:4,], aes(x = variable, y = value)) + 
   geom_bar(stat = "identity") +
+  + scale_y_continuous(labels = function(x) paste0(x*100, "%")) +
+  scale_x_discrete(breaks = c("Under18Fat", "Fat18t44", "Fat45t64", "Over65Fat"), 
+                   labels = c("Under 18", "18 to 44", "45 to 64", "Over 65")) +
+  ylab("Proportion of Fatalities") +
+  xlab("") +
   theme_minimal()
 
-B = ggplot(df[5:8,], aes(x = variable, y = value)) + 
+D = ggplot(df[5:8,], aes(x = variable, y = value)) + 
   geom_bar(stat = "identity") +
+  scale_y_continuous(labels = function(x) paste0(x*100, "%")) +
+  scale_x_discrete(breaks = c("Under18Pop", "Pop18t44", "Pop45t64", "Over65Pop"), 
+                   labels = c("Under 18", "18 to 44", "45 to 64", "Over 65")) +
+  ylab("Proportion of People") +
+  xlab("") +
   theme_minimal()
 
-multiplot(A, B, cols = 1)
+B = B + ggtitle("B") + 
+  theme(plot.title=element_text(hjust=0))
+
+D = D + ggtitle("D") + 
+  theme(plot.title=element_text(hjust=0))
+
+multiplot(A, C, B, D, cols = 2)
 ```
+
+
