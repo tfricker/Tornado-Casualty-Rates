@@ -814,4 +814,21 @@ D = D + ggtitle("D") +
 multiplot(A, C, B, D, cols = 2)
 ```
 
+Find the number of tornado fatalities by sex and the total population by sex
+```{r}
+df = data.frame(KillerTorn.sf) %>%
+  summarise(MaleFat = sum(Malefat),
+            FemaleFat = sum(Femalefat),
+            MalePop = sum(TotalMl),
+            FemalePop = sum(TotlFml))
+```
+
+Find per-capita fatality rates.
+```{r}
+df$MaleFat/df$MalePop * 100
+df$FemaleFat/df$FemalePop * 100
+(df$MaleFat/sum(KillerTorn.sf$TtlHsnU)) * 100
+(df$FemaleFat/sum(KillerTorn.sf$TtlHsnU)) * 100
+```
+
 
