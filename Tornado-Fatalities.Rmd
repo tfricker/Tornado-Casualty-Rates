@@ -19,6 +19,11 @@ library(zoo)
 library(rgeos)
 library(rgdal)
 library(scales)
+library(tmap)
+library(USAboundaries)
+library(areal)
+library(tidycensus)
+library(ipumsr)
 ```
 
 Begin by reading in tornado-level estimates of socioeconomic and demographic variables.
@@ -789,7 +794,7 @@ df = data.frame(KillerTorn.sf) %>%
 
 B = ggplot(df[1:4,], aes(x = variable, y = value)) + 
   geom_bar(stat = "identity") +
-  + scale_y_continuous(labels = function(x) paste0(x*100, "%")) +
+  scale_y_continuous(labels = function(x) paste0(x*100, "%")) +
   scale_x_discrete(breaks = c("Under18Fat", "Fat18t44", "Fat45t64", "Over65Fat"), 
                    labels = c("Under 18", "18 to 44", "45 to 64", "Over 65")) +
   ylab("Proportion of Fatalities") +
@@ -831,4 +836,273 @@ df$FemaleFat/df$FemalePop * 100
 (df$FemaleFat/sum(KillerTorn.sf$TtlHsnU)) * 100
 ```
 
+### Tornado fatality rates by Age and Sex ###
+
+Get state- and county-level data. Use the USAboundaires package to get a shapefile containing all counties in the US.
+```{r}
+states <- us_states()%>%
+  st_transform(crs = 2163) %>%
+  rename(st = state_abbr)
+
+states <- states %>%
+  filter(!st %in% c("AK", "PR", "HI"))
+
+counties <- us_counties() %>%
+  st_transform(crs = 2163) %>%
+  rename(GEOID = geoid)
+
+counties <- counties %>%
+  filter(!state_abbr %in% c("AK", "PR", "HI"))
+
+counties$GEOID = as.numeric(counties$GEOID)
+counties$CountyArea = st_area(counties)
+```
+
+Find the number of tornadoes intersecting each county
+```{r}
+KillerTorn.sf <- st_transform(KillerTorn.sf, crs = 2163)
+KillerTorn.sf$ID <- 1:nrow(KillerTorn.sf)
+
+ct = st_intersection(counties, KillerTorn.sf)
+
+x <- data.frame(ct) %>%
+  group_by(GEOID, name, state_abbr) %>%
+  summarize(nT = n())
+
+CountyRates <- merge(counties, x, by = c("GEOID", "name", "state_abbr"))
+```
+
+Determine the proportion of the tornado path by area that falls inside each county. The rows index the tornado number and the columns index the county number. Call these tornado segments.
+
+```{r}
+Areas = aw_intersect(counties, KillerTorn.sf, areaVar = "TornAreaInCounty")
+```
+
+Casualties in the SPC are given per tornado but where they occurred within the path (or surrounding) is unknown. The likelihood of a casualty increases with the number of people in the path so we assign to each county under the tornado path a fraction of the number of casualties based on the number of people in the area.
+
+Get county-level population. Use the population estimates from the Census Bureau from 1970-2014 see http://www.nber.org/data/census-intercensal-county-population.html. Use the 2014 value for 2015, 2016, 2017, and 2018. Census U.S. Intercensal County Population Data, 1970-2014 from http://www.nber.org/data/census-intercensal-county-population.html.
+
+```{r}
+pop = read.csv("county_pop_full_NEW.csv")
+
+pop$pop2015 = pop$pop2014
+pop$pop2016 = pop$pop2014
+pop$pop2017 = pop$pop2014
+pop$pop2018 = pop$pop2014
+pop$pop19904 = NULL
+
+pop2 = reshape2::melt(pop, id.vars = "county_name", measure.vars = 11:79)
+
+colnames(pop2)[3] = "Population" 
+pop2$Year = as.numeric(substring(pop2$variable, 4))
+pop2$GEOID = pop$fips
+```
+
+```{r}
+tmp = left_join(Areas, pop2[, c("Year", "GEOID", "Population")])
+tmp$id = 1:nrow(tmp)
+tmp = tmp[order(tmp$id), ]
+```
+
+```{r}
+Areas = Areas %>%
+  mutate(CountyPopulation = tmp$Population)
+```
+
+Compute the number of people exposed per tornado per county.
+```{r}
+Areas = Areas %>%
+  mutate(CountyPopulationDensity = as.vector(CountyPopulation/CountyArea) * 10^6,
+         PerTornPerCountyPeopleExposed = as.vector(CountyPopulationDensity * TornAreaInCounty))
+```
+
+Group by tornado and total the number of people exposed per tornado.
+```{r}
+perTorn = Areas %>%
+  group_by(ID) %>%
+  dplyr::summarize(PerTornPeopleExposed = sum(PerTornPerCountyPeopleExposed))
+
+perTorn = perTorn[,c(1:2)]; perTorn$geometry = NULL
+```
+
+```{r}
+Areas <- right_join(Areas, perTorn, by = "ID")
+
+Areas = Areas %>%
+  mutate(Ratio = PerTornPerCountyPeopleExposed/PerTornPeopleExposed)
+```
+
+```{r}
+Areas = Areas %>%
+  mutate(PerTornPerCountyFat = fat * Ratio,
+         PerTornPerCountyPermFat = Pfat * Ratio,
+         PerTornPerCountyMHFat = MHfat * Ratio)
+```
+
+Group by county and total the per tornado per county casualties.
+```{r}
+df = data.frame(Areas) %>%
+  group_by(GEOID) %>%
+  dplyr::summarize(Fat = sum(PerTornPerCountyFat),
+                   PFat = sum(PerTornPerCountyPermFat),
+                   MHFat = sum(PerTornPerCountyMHFat),
+                   Population = sum(CountyPopulation),
+                   PopulationDensity = mean(CountyPopulationDensity))
+
+df <- merge(counties, df, by = c("GEOID"))
+
+df$Fat = round(df$Fat)
+df$PFat = round(df$PFat)
+df$MHFat = round(df$MHFat)
+
+df$logFat = log10(df$Fat)
+df$logPFat = log10(df$PFat)
+df$logMHFat = log10(df$MHFat)
+```
+
+All Fatalities 
+```{r}
+tm_shape(states, projection ="+init=epsg:2163") +
+  tm_borders(alpha = 0.2) +
+  tm_fill(col = "grey94") +
+  tm_shape(counties) +
+  tm_borders(alpha = 0.2) + 
+  tm_shape(df) + 
+  tm_fill("logFat",
+          breaks = c(0, .5, 1, 1.5, 2, 2.5),
+          labels = c("1 to 16", "16 to 27", "27 to 45", "45 to 73", "> 73"),
+          palette = "Reds", title = "Number of Fatalities") +
+  tm_borders(alpha = 0.2) +
+  tm_format('World', legend.position = c("left", "bottom"),
+            attr.position = c("left", "bottom"),
+            legend.frame = FALSE) +
+  #tm_format_Europe(legend.position = c("left", "bottom"),
+  #                 attr.position = c("left", "bottom"),
+  #                 legend.frame = TRUE) +
+  #tm_scale_bar(position = c("right", "bottom")) +
+  #tm_compass(position = c("right", "bottom")) +
+  tm_layout(frame = FALSE, attr.outside=TRUE)
+```
+
+Mobile Home fatalities
+```{r}
+tm_shape(states, projection ="+init=epsg:2163") +
+  tm_borders(alpha = 0.2) +
+  tm_fill(col = "grey94") +
+  tm_shape(counties) +
+  tm_borders(alpha = 0.2) + 
+  tm_shape(df) + 
+  tm_fill("logMHFat",
+          breaks = c(0, .25, .5, .75, 1, 1.25),
+          labels = c("1 to 12", "12 to 22", "22 to 27", "27 to 34", "> 34"),
+          palette = "Reds", title = "Number of Fatalities") +
+  tm_borders(alpha = 0.2) +
+  tm_format('World', legend.position = c("left", "bottom"),
+            attr.position = c("left", "bottom"),
+            legend.frame = FALSE) +
+  #tm_format_Europe(legend.position = c("left", "bottom"),
+  #                 attr.position = c("left", "bottom"),
+  #                 legend.frame = TRUE) +
+  #tm_scale_bar(position = c("right", "bottom")) +
+  #tm_compass(position = c("right", "bottom")) +
+  tm_layout(frame = FALSE, attr.outside=TRUE)
+```
+
+Create a map of rasters.
+```{r}
+library(raster)
+xmn = -124.6813; xmx = -67.00742; ymn = 24.85; ymx = 49.38323; res = 0.6
+r = raster(xmn = xmn, xmx = xmx,
+           ymn = ymn, ymx = ymx,
+           resolution = res)
+ncell(r); nrow(r); ncol(r)
+
+Rsp = as(r, "SpatialPolygonsDataFrame")
+sfR = st_as_sf(Rsp)
+sfT = st_transform(sfR, crs = "+init=epsg:2163")
+```
+
+Rasterize the population data. Use the Areas dataset, as it is the most fine-scale data for population in county.
+```{r}
+Areas$ID = 1:nrow(Areas)
+sfT$ID2 = 1:nrow(sfT)
+
+out = aw_interpolate(sfT, 
+               tid = "ID2", 
+               source = Areas, 
+               sid = "ID",
+               extensive = c("PerTornPerCountyMHFat", "PerTornPerCountyPermFat"),
+               weight = "sum", 
+               output = "sf")
+
+out$MHFat <- round(out$PerTornPerCountyMHFat)
+out$PFat <- round(out$PerTornPerCountyPermFat)
+
+out <- out %>%
+  filter(MHFat > 0 | PFat > 0)
+
+out$logMHFat = log10(out$MHFat)
+out$logPFat = log10(out$PFat)
+```
+
+Mobile Home Fatalities 
+```{r}
+MHF.df <-  out %>%
+  filter(MHFat > 0) %>%
+  mutate(logMHFat = log10(MHFat))
+
+A <- tm_shape(states, projection ="+init=epsg:2163") +
+  tm_borders(alpha = 0.2) +
+  tm_fill(col = "grey94") +
+  tm_shape(MHF.df) + 
+  tm_fill("logMHFat",
+          breaks = c(0, .5, 1, 1.25, 1.5, 2),
+          labels = c("1 to 16", "16 to 27", "27 to 35", "35 to 48", "> 48"),
+          palette = "Reds", title = "Number of Fatalities") +
+  tm_borders(alpha = 0.2) +
+  tm_format('World', legend.position = c("left", "bottom"),
+            attr.position = c("left", "bottom"),
+            legend.frame = FALSE) +
+  #tm_format_Europe(legend.position = c("left", "bottom"),
+  #                 attr.position = c("left", "bottom"),
+  #                 legend.frame = TRUE) +
+  #tm_scale_bar(position = c("right", "bottom")) +
+  #tm_compass(position = c("right", "bottom")) +
+  tm_layout(frame = FALSE, attr.outside=TRUE, title = "A")
+```
+
+```{r}
+PF.df <-  out %>%
+  filter(PFat > 0) %>%
+  mutate(logPFat = log10(PFat))
+
+B <- tm_shape(states, projection ="+init=epsg:2163") +
+  tm_borders(alpha = 0.2) +
+  tm_fill(col = "grey94") +
+  tm_shape(PF.df) + 
+  tm_fill("logPFat",
+          breaks = c(0, .5, 1, 1.25, 1.5, 2),
+          labels = c("1 to 16", "16 to 27", "27 to 35", "35 to 48", "> 48"),
+          palette = "Reds", title = "Number of Fatalities") +
+  tm_borders(alpha = 0.2) +
+  tm_format('World', legend.position = c("left", "bottom"),
+            attr.position = c("left", "bottom"),
+            legend.frame = FALSE) +
+  #tm_format_Europe(legend.position = c("left", "bottom"),
+  #                 attr.position = c("left", "bottom"),
+  #                 legend.frame = TRUE) +
+  #tm_scale_bar(position = c("right", "bottom")) +
+  #tm_compass(position = c("right", "bottom")) +
+  tm_layout(frame = FALSE, attr.outside=TRUE, title = "B")
+```
+
+```{r}
+tmap_arrange(A, B)
+```
+
+Map the number of fatalities by season
+```{r}
+df = data.frame(KillerTorn.sf) %>%
+  filter(mo == 12 | mo == 1 | mo == 2)
+```
 
