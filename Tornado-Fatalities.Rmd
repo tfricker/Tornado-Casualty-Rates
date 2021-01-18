@@ -1087,7 +1087,7 @@ B <- tm_shape(states, projection ="+init=epsg:2163") +
   tm_shape(GridRates) + 
   tm_fill("nT",
           breaks = c(0, 2, 4, 6, 8, 10),
-          labels = c("0 to 2", "2 to 4", "4 to 6", "6 to 8", "> 8"),
+          labels = c("1 to 2", "2 to 4", "4 to 6", "6 to 8", "> 8"),
           palette = "Reds", title = "") +
   tm_borders(alpha = 0.2) +
   tm_format('World', legend.position = c("left", "bottom"),
@@ -1100,7 +1100,6 @@ B <- tm_shape(states, projection ="+init=epsg:2163") +
   #tm_compass(position = c("right", "bottom")) +
   tm_layout(frame = FALSE, attr.outside=TRUE, title = "B")
 ```
-
 
 Mobile Home Fatalities 
 ```{r}
@@ -1165,4 +1164,183 @@ Map the number of fatalities by season
 df = data.frame(KillerTorn.sf) %>%
   filter(mo == 12 | mo == 1 | mo == 2)
 ```
+
+Seasonal fatalities.
+
+December, January, and February.
+```{r}
+DJF <- Areas %>%
+  filter(mo == 12 | mo == 1 | mo == 2)
+
+out = aw_interpolate(sfT, 
+               tid = "ID2", 
+               source = DJF, 
+               sid = "ID",
+               extensive = c("PerTornPerCountyFat"),
+               weight = "sum", 
+               output = "sf")
+
+out$Fat <- round(out$PerTornPerCountyFat)
+
+out$logFat = log10(out$Fat)
+```
+
+```{r}
+DJF.df <-  out %>%
+  filter(Fat > 0) %>%
+  mutate(logFat = log10(Fat))
+
+A <- tm_shape(states, projection ="+init=epsg:2163") +
+  tm_borders(alpha = 0.2) +
+  tm_fill(col = "grey94") +
+  tm_shape(DJF.df) + 
+  tm_fill("logFat",
+          breaks = c(0, .5, 1, 1.5, 2, 2.25),
+          labels = c("1 to 16", "16 to 27", "27 to 45", "45 to 74", "> 74"),
+          palette = "Reds", title = "") +
+  tm_borders(alpha = 0.2) +
+  tm_format('World', legend.position = c("left", "bottom"),
+            attr.position = c("left", "bottom"),
+            legend.frame = FALSE) +
+  #tm_format_Europe(legend.position = c("left", "bottom"),
+  #                 attr.position = c("left", "bottom"),
+  #                 legend.frame = TRUE) +
+  #tm_scale_bar(position = c("right", "bottom")) +
+  #tm_compass(position = c("right", "bottom")) +
+  tm_layout(frame = FALSE, attr.outside=TRUE, title = "A")
+```
+
+March, April, and May.
+```{r}
+MAM <- Areas %>%
+  filter(mo == 3 | mo == 4 | mo == 5)
+
+out = aw_interpolate(sfT, 
+               tid = "ID2", 
+               source = MAM, 
+               sid = "ID",
+               extensive = c("PerTornPerCountyFat"),
+               weight = "sum", 
+               output = "sf")
+
+out$Fat <- round(out$PerTornPerCountyFat)
+
+out$logFat = log10(out$Fat)
+```
+
+```{r}
+MAM.df <-  out %>%
+  filter(Fat > 0) %>%
+  mutate(logFat = log10(Fat))
+
+B <- tm_shape(states, projection ="+init=epsg:2163") +
+  tm_borders(alpha = 0.2) +
+  tm_fill(col = "grey94") +
+  tm_shape(MAM.df) + 
+  tm_fill("logFat",
+          breaks = c(0, .5, 1, 1.5, 2, 2.25),
+          labels = c("1 to 16", "16 to 27", "27 to 45", "45 to 74", "> 74"),
+          palette = "Reds", title = "") +
+  tm_borders(alpha = 0.2) +
+  tm_format('World', legend.position = c("left", "bottom"),
+            attr.position = c("left", "bottom"),
+            legend.frame = FALSE) +
+  #tm_format_Europe(legend.position = c("left", "bottom"),
+  #                 attr.position = c("left", "bottom"),
+  #                 legend.frame = TRUE) +
+  #tm_scale_bar(position = c("right", "bottom")) +
+  #tm_compass(position = c("right", "bottom")) +
+  tm_layout(frame = FALSE, attr.outside=TRUE, title = "B")
+```
+
+June, July, and August.
+```{r}
+JJA <- Areas %>%
+  filter(mo == 6 | mo == 7 | mo == 8)
+
+out = aw_interpolate(sfT, 
+               tid = "ID2", 
+               source = JJA, 
+               sid = "ID",
+               extensive = c("PerTornPerCountyFat"),
+               weight = "sum", 
+               output = "sf")
+
+out$Fat <- round(out$PerTornPerCountyFat)
+
+out$logFat = log10(out$Fat)
+```
+
+```{r}
+JJA.df <-  out %>%
+  filter(Fat > 0) %>%
+  mutate(logFat = log10(Fat))
+
+C <- tm_shape(states, projection ="+init=epsg:2163") +
+  tm_borders(alpha = 0.2) +
+  tm_fill(col = "grey94") +
+  tm_shape(JJA.df) + 
+  tm_fill("logFat",
+          breaks = c(0, .5, 1, 1.5, 2, 2.25),
+          labels = c("1 to 16", "16 to 27", "27 to 45", "45 to 74", "> 74"),
+          palette = "Reds", title = "") +
+  tm_borders(alpha = 0.2) +
+  tm_format('World', legend.position = c("left", "bottom"),
+            attr.position = c("left", "bottom"),
+            legend.frame = FALSE) +
+  #tm_format_Europe(legend.position = c("left", "bottom"),
+  #                 attr.position = c("left", "bottom"),
+  #                 legend.frame = TRUE) +
+  #tm_scale_bar(position = c("right", "bottom")) +
+  #tm_compass(position = c("right", "bottom")) +
+  tm_layout(frame = FALSE, attr.outside=TRUE, title = "C")
+```
+
+September, October, and November
+```{r}
+SON <- Areas %>%
+  filter(mo == 9 | mo == 10 | mo == 11)
+
+out = aw_interpolate(sfT, 
+               tid = "ID2", 
+               source = SON, 
+               sid = "ID",
+               extensive = c("PerTornPerCountyFat"),
+               weight = "sum", 
+               output = "sf")
+
+out$Fat <- round(out$PerTornPerCountyFat)
+
+out$logFat = log10(out$Fat)
+```
+
+```{r}
+SON.df <-  out %>%
+  filter(Fat > 0) %>%
+  mutate(logFat = log10(Fat))
+
+D <- tm_shape(states, projection ="+init=epsg:2163") +
+  tm_borders(alpha = 0.2) +
+  tm_fill(col = "grey94") +
+  tm_shape(SON.df) + 
+  tm_fill("logFat",
+          breaks = c(0, .5, 1, 1.5, 2, 2.25),
+          labels = c("1 to 16", "16 to 27", "27 to 45", "45 to 74", "> 74"),
+          palette = "Reds", title = "") +
+  tm_borders(alpha = 0.2) +
+  tm_format('World', legend.position = c("left", "bottom"),
+            attr.position = c("left", "bottom"),
+            legend.frame = FALSE) +
+  #tm_format_Europe(legend.position = c("left", "bottom"),
+  #                 attr.position = c("left", "bottom"),
+  #                 legend.frame = TRUE) +
+  #tm_scale_bar(position = c("right", "bottom")) +
+  #tm_compass(position = c("right", "bottom")) +
+  tm_layout(frame = FALSE, attr.outside=TRUE, title = "D")
+```
+
+```{r}
+tmap_arrange(A, B, C, D)
+```
+
 
