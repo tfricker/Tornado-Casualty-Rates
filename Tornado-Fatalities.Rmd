@@ -1058,7 +1058,7 @@ A <- tm_shape(states, projection ="+init=epsg:2163") +
   tm_fill("logFat",
           breaks = c(0, .5, 1, 1.5, 2, 2.25),
           labels = c("1 to 16", "16 to 27", "27 to 45", "45 to 74", "> 74"),
-          palette = "Reds", title = "Number of Fatalities") +
+          palette = "Reds", title = "") +
   tm_borders(alpha = 0.2) +
   tm_format('World', legend.position = c("left", "bottom"),
             attr.position = c("left", "bottom"),
@@ -1088,7 +1088,7 @@ B <- tm_shape(states, projection ="+init=epsg:2163") +
   tm_fill("nT",
           breaks = c(0, 2, 4, 6, 8, 10),
           labels = c("0 to 2", "2 to 4", "4 to 6", "6 to 8", "> 8"),
-          palette = "Reds", title = "Number of Killer Tornadoes") +
+          palette = "Reds", title = "") +
   tm_borders(alpha = 0.2) +
   tm_format('World', legend.position = c("left", "bottom"),
             attr.position = c("left", "bottom"),
@@ -1118,7 +1118,7 @@ C <- tm_shape(states, projection ="+init=epsg:2163") +
   tm_fill("logMHFat",
           breaks = c(0, .5, 1, 1.25, 1.5, 2),
           labels = c("1 to 16", "16 to 27", "27 to 35", "35 to 48", "> 48"),
-          palette = "Reds", title = "Number of Fatalities") +
+          palette = "Reds", title = "") +
   tm_borders(alpha = 0.2) +
   tm_format('World', legend.position = c("left", "bottom"),
             attr.position = c("left", "bottom"),
@@ -1143,7 +1143,7 @@ D <- tm_shape(states, projection ="+init=epsg:2163") +
   tm_fill("logPFat",
           breaks = c(0, .5, 1, 1.25, 1.5, 2),
           labels = c("1 to 16", "16 to 27", "27 to 35", "35 to 48", "> 48"),
-          palette = "Reds", title = "Number of Fatalities") +
+          palette = "Reds", title = "") +
   tm_borders(alpha = 0.2) +
   tm_format('World', legend.position = c("left", "bottom"),
             attr.position = c("left", "bottom"),
