@@ -1343,4 +1343,183 @@ D <- tm_shape(states, projection ="+init=epsg:2163") +
 tmap_arrange(A, B, C, D)
 ```
 
+Diurnal fatalities.
+
+Daytime.
+```{r}
+Day <- Areas %>%
+  filter(Hour >= 6 & Hour < 18)
+
+out = aw_interpolate(sfT, 
+               tid = "ID2", 
+               source = Day, 
+               sid = "ID",
+               extensive = c("PerTornPerCountyFat"),
+               weight = "sum", 
+               output = "sf")
+
+out$Fat <- round(out$PerTornPerCountyFat)
+
+out$logFat = log10(out$Fat)
+```
+
+```{r}
+Day.df <-  out %>%
+  filter(Fat > 0) %>%
+  mutate(logFat = log10(Fat))
+
+A <- tm_shape(states, projection ="+init=epsg:2163") +
+  tm_borders(alpha = 0.2) +
+  tm_fill(col = "grey94") +
+  tm_shape(Day.df) + 
+  tm_fill("logFat",
+          breaks = c(0, .5, 1, 1.5, 2, 2.25),
+          labels = c("1 to 16", "16 to 27", "27 to 45", "45 to 74", "> 74"),
+          palette = "Reds", title = "") +
+  tm_borders(alpha = 0.2) +
+  tm_format('World', legend.position = c("left", "bottom"),
+            attr.position = c("left", "bottom"),
+            legend.frame = FALSE) +
+  #tm_format_Europe(legend.position = c("left", "bottom"),
+  #                 attr.position = c("left", "bottom"),
+  #                 legend.frame = TRUE) +
+  #tm_scale_bar(position = c("right", "bottom")) +
+  #tm_compass(position = c("right", "bottom")) +
+  tm_layout(frame = FALSE, attr.outside=TRUE, title = "A")
+```
+
+Evening.
+```{r}
+Evening <- Areas %>%
+  filter(Hour >= 18 & Hour <= 23)
+
+out = aw_interpolate(sfT, 
+               tid = "ID2", 
+               source = Evening, 
+               sid = "ID",
+               extensive = c("PerTornPerCountyFat"),
+               weight = "sum", 
+               output = "sf")
+
+out$Fat <- round(out$PerTornPerCountyFat)
+
+out$logFat = log10(out$Fat)
+```
+
+```{r}
+Evening.df <-  out %>%
+  filter(Fat > 0) %>%
+  mutate(logFat = log10(Fat))
+
+B <- tm_shape(states, projection ="+init=epsg:2163") +
+  tm_borders(alpha = 0.2) +
+  tm_fill(col = "grey94") +
+  tm_shape(Evening.df) + 
+  tm_fill("logFat",
+          breaks = c(0, .5, 1, 1.5, 2, 2.25),
+          labels = c("1 to 16", "16 to 27", "27 to 45", "45 to 74", "> 74"),
+          palette = "Reds", title = "") +
+  tm_borders(alpha = 0.2) +
+  tm_format('World', legend.position = c("left", "bottom"),
+            attr.position = c("left", "bottom"),
+            legend.frame = FALSE) +
+  #tm_format_Europe(legend.position = c("left", "bottom"),
+  #                 attr.position = c("left", "bottom"),
+  #                 legend.frame = TRUE) +
+  #tm_scale_bar(position = c("right", "bottom")) +
+  #tm_compass(position = c("right", "bottom")) +
+  tm_layout(frame = FALSE, attr.outside=TRUE, title = "B")
+```
+
+Night.
+```{r}
+Night <- Areas %>%
+  filter(Hour >= 0 & Hour < 6)
+
+out = aw_interpolate(sfT, 
+               tid = "ID2", 
+               source = Night, 
+               sid = "ID",
+               extensive = c("PerTornPerCountyFat"),
+               weight = "sum", 
+               output = "sf")
+
+out$Fat <- round(out$PerTornPerCountyFat)
+
+out$logFat = log10(out$Fat)
+```
+
+```{r}
+Night.df <-  out %>%
+  filter(Fat > 0) %>%
+  mutate(logFat = log10(Fat))
+
+C <- tm_shape(states, projection ="+init=epsg:2163") +
+  tm_borders(alpha = 0.2) +
+  tm_fill(col = "grey94") +
+  tm_shape(Night.df) + 
+  tm_fill("logFat",
+          breaks = c(0, .5, 1, 1.5, 2, 2.25),
+          labels = c("1 to 16", "16 to 27", "27 to 45", "45 to 74", "> 74"),
+          palette = "Reds", title = "") +
+  tm_borders(alpha = 0.2) +
+  tm_format('World', legend.position = c("left", "bottom"),
+            attr.position = c("left", "bottom"),
+            legend.frame = FALSE) +
+  #tm_format_Europe(legend.position = c("left", "bottom"),
+  #                 attr.position = c("left", "bottom"),
+  #                 legend.frame = TRUE) +
+  #tm_scale_bar(position = c("right", "bottom")) +
+  #tm_compass(position = c("right", "bottom")) +
+  tm_layout(frame = FALSE, attr.outside=TRUE, title = "C")
+```
+
+Dark
+```{r}
+Dark <- Areas %>%
+  filter(Hour >= 18 | Hour <= 6)
+
+out = aw_interpolate(sfT, 
+               tid = "ID2", 
+               source = Dark, 
+               sid = "ID",
+               extensive = c("PerTornPerCountyFat"),
+               weight = "sum", 
+               output = "sf")
+
+out$Fat <- round(out$PerTornPerCountyFat)
+
+out$logFat = log10(out$Fat)
+```
+
+```{r}
+Dark.df <-  out %>%
+  filter(Fat > 0) %>%
+  mutate(logFat = log10(Fat))
+
+B <- tm_shape(states, projection ="+init=epsg:2163") +
+  tm_borders(alpha = 0.2) +
+  tm_fill(col = "grey94") +
+  tm_shape(Dark.df) + 
+  tm_fill("logFat",
+          breaks = c(0, .5, 1, 1.5, 2, 2.25),
+          labels = c("1 to 16", "16 to 27", "27 to 45", "45 to 74", "> 74"),
+          palette = "Reds", title = "") +
+  tm_borders(alpha = 0.2) +
+  tm_format('World', legend.position = c("left", "bottom"),
+            attr.position = c("left", "bottom"),
+            legend.frame = FALSE) +
+  #tm_format_Europe(legend.position = c("left", "bottom"),
+  #                 attr.position = c("left", "bottom"),
+  #                 legend.frame = TRUE) +
+  #tm_scale_bar(position = c("right", "bottom")) +
+  #tm_compass(position = c("right", "bottom")) +
+  tm_layout(frame = FALSE, attr.outside=TRUE, title = "B")
+```
+
+```{r}
+tmap_arrange(A, B)
+```
+
+
 
