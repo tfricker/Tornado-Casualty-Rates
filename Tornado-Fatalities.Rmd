@@ -276,7 +276,9 @@ df <- data.frame(KillerTorn.sf) %>%
             PHUfatRate = sum(fat)/sum(TtlHsnU),
             pop = sum(TotalPp),
             HU = sum(TtlHsnU),
-            nT = n())
+            nT = n(),
+            avgM = mean(mag),
+            avgED = mean(ED))
 ```
 
 Monthly fatality rates
