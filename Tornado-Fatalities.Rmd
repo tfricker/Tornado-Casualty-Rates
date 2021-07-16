@@ -87,7 +87,7 @@ summary(df$nF)
 
 On average, over the past 24 years, 74 people have been killed in tornadoes per year. The median number of annual fatalities is 46 with an inter-quartile range between 35 and 68.
 
-Create plots showing the number of fatalities by year and the numbr of killer tornadoes by year.
+Create plots showing the number of fatalities by year and the number of killer tornadoes by year.
 ```{r}
 A <- ggplot(df, aes(x = yr, y = nF)) +
   geom_line() +
@@ -324,6 +324,29 @@ B = B + ggtitle("B") +
   theme(plot.title=element_text(hjust=0))
 
 multiplot(A, B, cols = 2)
+```
+
+Seasonal fatality rates
+```{r}
+df <- data.frame(KillerTorn.sf) %>%
+  group_by(mo == 12 | mo == 1 | mo == 2) %>%
+  summarize(PCfatRate = sum(fat)/sum(TotalPp),
+            PHUfatRate = sum(fat)/sum(TtlHsnU))
+
+df <- data.frame(KillerTorn.sf) %>%
+  group_by(mo == 3 | mo == 4 | mo == 5) %>%
+  summarize(PCfatRate = sum(fat)/sum(TotalPp),
+            PHUfatRate = sum(fat)/sum(TtlHsnU))
+
+df <- data.frame(KillerTorn.sf) %>%
+  group_by(mo == 6 | mo == 7 | mo == 8) %>%
+  summarize(PCfatRate = sum(fat)/sum(TotalPp),
+            PHUfatRate = sum(fat)/sum(TtlHsnU))
+
+df <- data.frame(KillerTorn.sf) %>%
+  group_by(mo == 9 | mo == 10 | mo == 11) %>%
+  summarize(PCfatRate = sum(fat)/sum(TotalPp),
+            PHUfatRate = sum(fat)/sum(TtlHsnU))
 ```
 
 Hourly Rates
@@ -1523,5 +1546,98 @@ B <- tm_shape(states, projection ="+init=epsg:2163") +
 tmap_arrange(A, B)
 ```
 
+### Raster Mapping ###
 
+Try to make this plot in rasters
+```{r}
+Areas$ID = 1:nrow(Areas)
+sfT$ID2 = 1:nrow(sfT)
+
+out = aw_interpolate(sfT, 
+               tid = "ID2", 
+               source = Areas, 
+               sid = "ID",
+               extensive = c("PerTornPerCountyMHFat", "PerTornPerCountyPermFat",
+                             "PerTornPerCountyFat"),
+               weight = "sum", 
+               output = "sf")
+
+out$MHFat <- round(out$PerTornPerCountyMHFat)
+out$PFat <- round(out$PerTornPerCountyPermFat)
+out$Fat <- round(out$PerTornPerCountyFat)
+
+out$logMHFat = log10(out$MHFat)
+out$logPFat = log10(out$PFat)
+out$logFat = log10(out$Fat)
+```
+
+```{r}
+out <- out %>%
+  st_transform(crs = 4326)
+```
+
+```{r}
+fat_raster <- rasterize(out, r, out$Fat, fun=max)
+
+values(fat_raster) = log10(values(fat_raster))
+
+tm_shape(states, projection ="+init=epsg:2163") +
+  tm_borders(alpha = 0.2) +
+  tm_fill(col = "grey94") +
+  tm_shape(fat_raster, projection ="+init=epsg:2163") + 
+  tm_raster(breaks = c(0, .5, 1, 1.5, 2, 2.25),
+          labels = c("1 to 16", "16 to 27", "27 to 45", "45 to 74", "> 74"),
+          palette = "Reds", title = "") +
+  tm_shape(states, projection ="+init=epsg:2163", is.master = TRUE) +
+  tm_borders(alpha = 0.2) +
+  tm_format('World', legend.position = c("left", "bottom"),
+            attr.position = c("left", "bottom"),
+            legend.frame = FALSE) +
+  tm_layout(frame = FALSE, attr.outside=TRUE)
+```
+
+Killer Tornadoes
+```{r}
+out = aw_interpolate(sfT, 
+               tid = "ID2", 
+               source = Areas, 
+               sid = "ID",
+               extensive = c("PerTornPerCountyMHFat", "PerTornPerCountyPermFat",
+                             "PerTornPerCountyFat"),
+               weight = "sum", 
+               output = "sf")
+
+out$MHFat <- round(out$PerTornPerCountyMHFat)
+out$PFat <- round(out$PerTornPerCountyPermFat)
+out$Fat <- round(out$PerTornPerCountyFat)
+
+ct = st_intersection(out, KillerTorn.sf)
+
+x <- data.frame(ct) %>%
+  group_by(ID2) %>%
+  summarize(nT = n())
+
+out <- out %>%
+  st_transform(crs = 4326)
+
+GridRates <- merge(out, x, by = c("ID2"))
+
+count_raster <- rasterize(GridRates, r, GridRates$nT, fun=max)
+```
+
+```{r}
+tm_shape(states, projection ="+init=epsg:2163") +
+  tm_borders(alpha = 0.2) +
+  tm_fill(col = "grey94") +
+  tm_shape(count_raster, projection ="+init=epsg:2163") + 
+  tm_raster(breaks = c(0, 2, 4, 6, 8, 10),
+          labels = c("1 to 2", "2 to 4", "4 to 6", "6 to 8", "> 8"),
+          palette = "Reds", title = "") +
+  tm_shape(states, projection ="+init=epsg:2163", is.master = TRUE) +
+  tm_borders(alpha = 0.2) +
+  tm_format('World', legend.position = c("left", "bottom"),
+            attr.position = c("left", "bottom"),
+            legend.frame = FALSE) +
+  tm_layout(frame = FALSE, attr.outside=TRUE)
+```
 
