@@ -861,7 +861,7 @@ df$FemaleFat/df$FemalePop * 100
 (df$FemaleFat/sum(KillerTorn.sf$TtlHsnU)) * 100
 ```
 
-### Tornado fatality rates by Age and Sex ###
+### A Geographic Distribution of Tornado Fatalities ###
 
 Get state- and county-level data. Use the USAboundaires package to get a shapefile containing all counties in the US.
 ```{r}
