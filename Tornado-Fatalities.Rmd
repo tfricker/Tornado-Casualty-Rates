@@ -1807,3 +1807,169 @@ B <- tm_shape(states, projection ="+init=epsg:2163") +
 ```{r}
 tmap_arrange(A, B)
 ```
+
+Seasonal fatalities.
+
+December, January, and February.
+```{r}
+DJF <- Areas %>%
+  filter(mo == 12 | mo == 1 | mo == 2)
+
+out = aw_interpolate(sfT, 
+               tid = "ID2", 
+               source = DJF, 
+               sid = "ID",
+               extensive = c("PerTornPerCountyFat"),
+               weight = "sum", 
+               output = "sf")
+
+out$Fat <- round(out$PerTornPerCountyFat)
+
+out <- out %>%
+  st_transform(crs = 4326)
+```
+
+```{r}
+DJF_raster <- rasterize(out, r, out$Fat, fun=max)
+
+values(DJF_raster) = log10(values(DJF_raster))
+
+A <- tm_shape(states, projection ="+init=epsg:2163") +
+  tm_borders(alpha = 0.2) +
+  tm_fill(col = "grey94") +
+  tm_shape(DJF_raster, projection ="+init=epsg:2163") + 
+  tm_raster(breaks = c(0, .5, 1, 1.5, 2, 2.25),
+          labels = c("1 to 16", "16 to 27", "27 to 45", "45 to 74", "> 74"),
+          palette = "Reds", title = "") +
+  tm_shape(states, projection ="+init=epsg:2163", is.master = TRUE) +
+  tm_borders(alpha = 0.2) +
+  tm_format('World', legend.position = c("left", "bottom"),
+            attr.position = c("left", "bottom"),
+            legend.frame = FALSE) +
+  tm_layout(frame = FALSE, attr.outside=TRUE, title = "A")
+```
+
+March, April, and May.
+```{r}
+MAM <- Areas %>%
+  filter(mo == 3 | mo == 4 | mo == 5)
+
+out = aw_interpolate(sfT, 
+               tid = "ID2", 
+               source = MAM, 
+               sid = "ID",
+               extensive = c("PerTornPerCountyFat"),
+               weight = "sum", 
+               output = "sf")
+
+out$Fat <- round(out$PerTornPerCountyFat)
+
+out <- out %>%
+  st_transform(crs = 4326)
+```
+
+```{r}
+MAM_raster <- rasterize(out, r, out$Fat, fun=max)
+
+values(MAM_raster) = log10(values(MAM_raster))
+
+B <- tm_shape(states, projection ="+init=epsg:2163") +
+  tm_borders(alpha = 0.2) +
+  tm_fill(col = "grey94") +
+  tm_shape(MAM_raster, projection ="+init=epsg:2163") + 
+  tm_raster(breaks = c(0, .5, 1, 1.5, 2, 2.25),
+          labels = c("1 to 16", "16 to 27", "27 to 45", "45 to 74", "> 74"),
+          palette = "Reds", title = "") +
+  tm_shape(states, projection ="+init=epsg:2163", is.master = TRUE) +
+  tm_borders(alpha = 0.2) +
+  tm_format('World', legend.position = c("left", "bottom"),
+            attr.position = c("left", "bottom"),
+            legend.frame = FALSE) +
+  tm_layout(frame = FALSE, attr.outside=TRUE, title = "B")
+```
+
+June, July, and August.
+```{r}
+JJA <- Areas %>%
+  filter(mo == 6 | mo == 7 | mo == 8)
+
+out = aw_interpolate(sfT, 
+               tid = "ID2", 
+               source = JJA, 
+               sid = "ID",
+               extensive = c("PerTornPerCountyFat"),
+               weight = "sum", 
+               output = "sf")
+
+out$Fat <- round(out$PerTornPerCountyFat)
+
+out <- out %>%
+  st_transform(crs = 4326)
+```
+
+```{r}
+JJA_raster <- rasterize(out, r, out$Fat, fun=max)
+
+values(JJA_raster) = log10(values(JJA_raster))
+
+C <- tm_shape(states, projection ="+init=epsg:2163") +
+  tm_borders(alpha = 0.2) +
+  tm_fill(col = "grey94") +
+  tm_shape(JJA_raster, projection ="+init=epsg:2163") + 
+  tm_raster(breaks = c(0, .5, 1, 1.5, 2, 2.25),
+          labels = c("1 to 16", "16 to 27", "27 to 45", "45 to 74", "> 74"),
+          palette = "Reds", title = "") +
+  tm_shape(states, projection ="+init=epsg:2163", is.master = TRUE) +
+  tm_borders(alpha = 0.2) +
+  tm_format('World', legend.position = c("left", "bottom"),
+            attr.position = c("left", "bottom"),
+            legend.frame = FALSE) +
+  tm_layout(frame = FALSE, attr.outside=TRUE, title = "C")
+```
+
+September, October, and November
+```{r}
+SON <- Areas %>%
+  filter(mo == 9 | mo == 10 | mo == 11)
+
+out = aw_interpolate(sfT, 
+               tid = "ID2", 
+               source = SON, 
+               sid = "ID",
+               extensive = c("PerTornPerCountyFat"),
+               weight = "sum", 
+               output = "sf")
+
+out$Fat <- round(out$PerTornPerCountyFat)
+
+out <- out %>%
+  st_transform(crs = 4326)
+```
+
+```{r}
+SON_raster <- rasterize(out, r, out$Fat, fun=max)
+
+values(SON_raster) = log10(values(SON_raster))
+
+D <- tm_shape(states, projection ="+init=epsg:2163") +
+  tm_borders(alpha = 0.2) +
+  tm_fill(col = "grey94") +
+  tm_shape(SON_raster, projection ="+init=epsg:2163") + 
+  tm_raster(breaks = c(0, .5, 1, 1.5, 2, 2.25),
+          labels = c("1 to 16", "16 to 27", "27 to 45", "45 to 74", "> 74"),
+          palette = "Reds", title = "") +
+  tm_shape(states, projection ="+init=epsg:2163", is.master = TRUE) +
+  tm_borders(alpha = 0.2) +
+  tm_format('World', legend.position = c("left", "bottom"),
+            attr.position = c("left", "bottom"),
+            legend.frame = FALSE) +
+  tm_layout(frame = FALSE, attr.outside=TRUE, title = "D")
+```
+
+```{r}
+tmap_arrange(A, B, C, D)
+```
+
+
+
+
