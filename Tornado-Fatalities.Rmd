@@ -1581,7 +1581,7 @@ fat_raster <- rasterize(out, r, out$Fat, fun=max)
 
 values(fat_raster) = log10(values(fat_raster))
 
-tm_shape(states, projection ="+init=epsg:2163") +
+A = tm_shape(states, projection ="+init=epsg:2163") +
   tm_borders(alpha = 0.2) +
   tm_fill(col = "grey94") +
   tm_shape(fat_raster, projection ="+init=epsg:2163") + 
@@ -1593,7 +1593,7 @@ tm_shape(states, projection ="+init=epsg:2163") +
   tm_format('World', legend.position = c("left", "bottom"),
             attr.position = c("left", "bottom"),
             legend.frame = FALSE) +
-  tm_layout(frame = FALSE, attr.outside=TRUE)
+  tm_layout(frame = FALSE, attr.outside=TRUE, title = "A")
 ```
 
 Killer Tornadoes
@@ -1626,7 +1626,7 @@ count_raster <- rasterize(GridRates, r, GridRates$nT, fun=max)
 ```
 
 ```{r}
-tm_shape(states, projection ="+init=epsg:2163") +
+B = tm_shape(states, projection ="+init=epsg:2163") +
   tm_borders(alpha = 0.2) +
   tm_fill(col = "grey94") +
   tm_shape(count_raster, projection ="+init=epsg:2163") + 
@@ -1638,6 +1638,172 @@ tm_shape(states, projection ="+init=epsg:2163") +
   tm_format('World', legend.position = c("left", "bottom"),
             attr.position = c("left", "bottom"),
             legend.frame = FALSE) +
-  tm_layout(frame = FALSE, attr.outside=TRUE)
+  tm_layout(frame = FALSE, attr.outside=TRUE, title = "B")
 ```
 
+Permanent Home Fatalities
+```{r}
+Areas$ID = 1:nrow(Areas)
+sfT$ID2 = 1:nrow(sfT)
+
+out = aw_interpolate(sfT, 
+               tid = "ID2", 
+               source = Areas, 
+               sid = "ID",
+               extensive = c("PerTornPerCountyMHFat", "PerTornPerCountyPermFat",
+                             "PerTornPerCountyFat"),
+               weight = "sum", 
+               output = "sf")
+
+out$MHFat <- round(out$PerTornPerCountyMHFat)
+out$PFat <- round(out$PerTornPerCountyPermFat)
+out$Fat <- round(out$PerTornPerCountyFat)
+
+out$logMHFat = log10(out$MHFat)
+out$logPFat = log10(out$PFat)
+out$logFat = log10(out$Fat)
+
+out <- out %>%
+  st_transform(crs = 4326)
+
+out <- out %>%
+  filter(MHFat > 0 | PFat > 0)
+```
+
+```{r}
+PHfat_raster <- rasterize(out, r, out$PFat, fun=max)
+
+values(PHfat_raster) = log10(values(PHfat_raster))
+
+C <- tm_shape(states, projection ="+init=epsg:2163") +
+  tm_borders(alpha = 0.2) +
+  tm_fill(col = "grey94") +
+  tm_shape(PHfat_raster, projection ="+init=epsg:2163") + 
+  tm_raster(breaks = c(0, .5, 1, 1.25, 1.5, 2),
+          labels = c("1 to 16", "16 to 27", "27 to 35", "35 to 48", "> 48"),
+          palette = "Reds", title = "") +
+  tm_shape(states, projection ="+init=epsg:2163", is.master = TRUE) +
+  tm_borders(alpha = 0.2) +
+  tm_format('World', legend.position = c("left", "bottom"),
+            attr.position = c("left", "bottom"),
+            legend.frame = FALSE) +
+  tm_layout(frame = FALSE, attr.outside=TRUE, title = "C")
+```
+
+Mobile Home Fatalities
+```{r}
+MHfat_raster <- rasterize(out, r, out$MHFat, fun=max)
+
+values(MHfat_raster) = log10(values(MHfat_raster))
+
+D <- tm_shape(states, projection ="+init=epsg:2163") +
+  tm_borders(alpha = 0.2) +
+  tm_fill(col = "grey94") +
+  tm_shape(MHfat_raster, projection ="+init=epsg:2163") + 
+  tm_raster(breaks = c(0, .5, 1, 1.25, 1.5, 2),
+          labels = c("1 to 16", "16 to 27", "27 to 35", "35 to 48", "> 48"),
+          palette = "Reds", title = "") +
+  tm_shape(states, projection ="+init=epsg:2163", is.master = TRUE) +
+  tm_borders(alpha = 0.2) +
+  tm_format('World', legend.position = c("left", "bottom"),
+            attr.position = c("left", "bottom"),
+            legend.frame = FALSE) +
+  tm_layout(frame = FALSE, attr.outside=TRUE, title = "D")
+```
+
+Plot together
+```{r}
+tmap_arrange(A, B, C, D)
+```
+
+Export (.jpeg) at 650 width and maintain aspect ratio.
+
+Diurnal fatalities.
+
+Daytime.
+```{r}
+Day <- Areas %>%
+  filter(Hour >= 6 & Hour < 18)
+
+out = aw_interpolate(sfT, 
+               tid = "ID2", 
+               source = Day, 
+               sid = "ID",
+               extensive = c("PerTornPerCountyFat"),
+               weight = "sum", 
+               output = "sf")
+
+out$Fat <- round(out$PerTornPerCountyFat)
+
+out <- out %>%
+  st_transform(crs = 4326)
+
+out <- out %>%
+  filter(Fat > 0)
+```
+
+```{r}
+Dayfat_raster <- rasterize(out, r, out$Fat, fun=max)
+
+values(Dayfat_raster) = log10(values(Dayfat_raster))
+
+A <- tm_shape(states, projection ="+init=epsg:2163") +
+  tm_borders(alpha = 0.2) +
+  tm_fill(col = "grey94") +
+  tm_shape(Dayfat_raster, projection ="+init=epsg:2163") + 
+  tm_raster(breaks = c(0, .5, 1, 1.5, 2, 2.25),
+          labels = c("1 to 16", "16 to 27", "27 to 45", "45 to 74", "> 74"),
+          palette = "Reds", title = "") +
+  tm_shape(states, projection ="+init=epsg:2163", is.master = TRUE) +
+  tm_borders(alpha = 0.2) +
+  tm_format('World', legend.position = c("left", "bottom"),
+            attr.position = c("left", "bottom"),
+            legend.frame = FALSE) +
+  tm_layout(frame = FALSE, attr.outside=TRUE, title = "A")
+```
+
+Dark
+```{r}
+Dark <- Areas %>%
+  filter(Hour >= 18 | Hour <= 6)
+
+out = aw_interpolate(sfT, 
+               tid = "ID2", 
+               source = Dark, 
+               sid = "ID",
+               extensive = c("PerTornPerCountyFat"),
+               weight = "sum", 
+               output = "sf")
+
+out$Fat <- round(out$PerTornPerCountyFat)
+
+out <- out %>%
+  st_transform(crs = 4326)
+
+out <- out %>%
+  filter(Fat > 0)
+```
+
+```{r}
+Darkfat_raster <- rasterize(out, r, out$Fat, fun=max)
+
+values(Darkfat_raster) = log10(values(Darkfat_raster))
+
+B <- tm_shape(states, projection ="+init=epsg:2163") +
+  tm_borders(alpha = 0.2) +
+  tm_fill(col = "grey94") +
+  tm_shape(Darkfat_raster, projection ="+init=epsg:2163") + 
+  tm_raster(breaks = c(0, .5, 1, 1.5, 2, 2.25),
+          labels = c("1 to 16", "16 to 27", "27 to 45", "45 to 74", "> 74"),
+          palette = "Reds", title = "") +
+  tm_shape(states, projection ="+init=epsg:2163", is.master = TRUE) +
+  tm_borders(alpha = 0.2) +
+  tm_format('World', legend.position = c("left", "bottom"),
+            attr.position = c("left", "bottom"),
+            legend.frame = FALSE) +
+  tm_layout(frame = FALSE, attr.outside=TRUE, title = "B")
+```
+
+```{r}
+tmap_arrange(A, B)
+```
