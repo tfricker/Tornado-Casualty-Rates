@@ -326,23 +326,23 @@ Plot the monthly rates
 ```{r}
 A = ggplot(df, aes(x = mo, y = PCfatRate)) +
   geom_bar(stat = "identity") +
-  coord_polar() +
+  coord_polar(start = -.235) +
   scale_x_continuous(breaks = seq(1,12), labels = df$MonthF, minor_breaks = NULL) +
   xlab("") +
   scale_y_continuous(labels = label_percent(accuracy = .01, scale = 100)) +
   ylab("Per-Capita Fatality Rate") +
-  theme_minimal() +
+  theme_minimal(base_size = 9.5) +
   theme(axis.ticks.y = element_line(),
         panel.border = element_rect(fill = NA))
 
 B = ggplot(df, aes(x = mo, y = PHUfatRate)) +
   geom_bar(stat = "identity") +
-  coord_polar() +
+  coord_polar(start = -.235) +
   scale_x_continuous(breaks = seq(1,12), labels = df$MonthF, minor_breaks = NULL) +
   xlab("") +
   scale_y_continuous(labels = label_percent(accuracy = .01, scale = 100)) +
   ylab("Per-Housing Unit Fatality Rate") +
-  theme_minimal() +
+  theme_minimal(base_size = 9.5) +
   theme(axis.ticks.y = element_line(),
         panel.border = element_rect(fill = NA))
 
@@ -390,25 +390,25 @@ df <- data.frame(KillerTorn.sf) %>%
 
 C = ggplot(df, aes(x = Hour, y = PCfatRate)) +
   geom_bar(stat = "identity") +
-  coord_polar() +
+  coord_polar(start = -.12) +
   scale_x_continuous(breaks = c(0, 3, 6, 9, 12, 15, 18, 21), labels = c("12 AM", "3 AM", "6 AM", "9 AM", "12 PM", "3 PM", "6 PM", "9 PM")) +
   xlab("") +
   scale_y_continuous(labels = label_percent(accuracy = .01, scale = 100)) +
   ylab("Per-Capita Fatality Rate") +
-  theme_minimal(base_size = global_size) +
+  theme_minimal(base_size = 9.5) +
   theme(axis.ticks.y = element_line(),
         panel.border = element_rect(fill = NA))
 
 D = ggplot(df, aes(x = Hour, y = PHUfatRate)) +
   geom_bar(stat = "identity") +
-  coord_polar() +
+  coord_polar(start = -.12) +
   scale_x_continuous(breaks = c(0, 3, 6, 9, 12, 15, 18, 21), 
                      labels = c("12 AM", "3 AM", "6 AM", "9 AM", "12 PM",
                                 "3 PM", "6 PM", "9 PM")) +
   xlab("") +
   scale_y_continuous(labels = label_percent(accuracy = .01, scale = 100)) +
   ylab("Per-Housing Unit Fatality Rate") +
-  theme_minimal(base_size = global_size) +
+  theme_minimal(base_size = 9.5) +
   theme(axis.ticks.y = element_line(),
         panel.border = element_rect(fill = NA))
 
@@ -420,6 +420,7 @@ D = D + ggtitle("D") +
 
 multiplot(A, C, B, D, cols = 2)
 ```
+*Export as 7.25 x 6.75 portrait*
 
 ### Tornado fatality rates by location ###
 
