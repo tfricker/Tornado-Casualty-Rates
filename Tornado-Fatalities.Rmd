@@ -133,10 +133,39 @@ D = ggplot(df3, aes(x = as.integer(Var1), y = Freq)) +
   theme_minimal()
 ```
 
-Multiplot
+Multiplot Function
 ```{r}
-source("http://peterhaschke.com/Code/multiplot.R")
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  require(grid)
 
+  plots <- c(list(...), plotlist)
+
+  numPlots = length(plots)
+
+  if (is.null(layout)) {
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                    ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+
+ if (numPlots==1) {
+    print(plots[[1]])
+
+  } else {
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+
+    for (i in 1:numPlots) {
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
+```
+
+
+```{r}
 A = A + ggtitle("A") + 
   theme(plot.title=element_text(hjust=0))
 
@@ -362,22 +391,24 @@ df <- data.frame(KillerTorn.sf) %>%
 C = ggplot(df, aes(x = Hour, y = PCfatRate)) +
   geom_bar(stat = "identity") +
   coord_polar() +
-  scale_x_continuous(breaks = c(0, 3, 6, 9, 12, 15, 18, 21), labels = c("12:00 AM", "3:00 AM", "6:00 AM", "9:00 AM", "12:00 PM", "3:00 PM", "6:00 PM", "9:00 PM")) +
+  scale_x_continuous(breaks = c(0, 3, 6, 9, 12, 15, 18, 21), labels = c("12 AM", "3 AM", "6 AM", "9 AM", "12 PM", "3 PM", "6 PM", "9 PM")) +
   xlab("") +
   scale_y_continuous(labels = label_percent(accuracy = .01, scale = 100)) +
   ylab("Per-Capita Fatality Rate") +
-  theme_minimal() +
+  theme_minimal(base_size = global_size) +
   theme(axis.ticks.y = element_line(),
         panel.border = element_rect(fill = NA))
 
 D = ggplot(df, aes(x = Hour, y = PHUfatRate)) +
   geom_bar(stat = "identity") +
   coord_polar() +
-  scale_x_continuous(breaks = c(0, 3, 6, 9, 12, 15, 18, 21), labels = c("12:00 AM", "3:00 AM", "6:00 AM", "9:00 AM", "12:00 PM", "3:00 PM", "6:00 PM", "9:00 PM")) +
+  scale_x_continuous(breaks = c(0, 3, 6, 9, 12, 15, 18, 21), 
+                     labels = c("12 AM", "3 AM", "6 AM", "9 AM", "12 PM",
+                                "3 PM", "6 PM", "9 PM")) +
   xlab("") +
   scale_y_continuous(labels = label_percent(accuracy = .01, scale = 100)) +
   ylab("Per-Housing Unit Fatality Rate") +
-  theme_minimal() +
+  theme_minimal(base_size = global_size) +
   theme(axis.ticks.y = element_line(),
         panel.border = element_rect(fill = NA))
 
